@@ -1,0 +1,69 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: mongo
+    restart: always
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: 92110
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data:/data/db
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo-express
+    restart: always
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: 92110
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_AUTH_DATABASE: admin
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - ./backend/.env.${NODE_ENV:-development}
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    depends_on:
+      - mongo
+    command: >
+      sh -c "if [ \"${NODE_ENV}\" = \"development\" ];
+             then npm run dev;
+             else npm run start;
+             fi"
+
+  frontend:
+    build:
+      context: ./trinity
+      dockerfile: Dockerfile
+    restart: always
+    env_file:
+      - ./trinity/.env.${NODE_ENV:-development}
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./trinity:/app
+      - /app/node_modules
+    depends_on:
+      - backend
+    command: >
+      sh -c "if [ \"${NODE_ENV}\" = \"development\" ];
+             then npm run dev;
+             else npm run start;
+             fi"
+      
+volumes:
+  mongo-data:

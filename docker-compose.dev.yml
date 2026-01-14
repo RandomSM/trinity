@@ -1,0 +1,111 @@
+version: "3.9"
+
+services:
+  mongo:
+    image: mongo:6
+    container_name: trinity_mongo_dev
+    restart: unless-stopped
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: root
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD:-92110}
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo-data-dev:/data/db
+      - mongo-logs-dev:/var/log/mongodb
+    networks:
+      - trinity-network
+    healthcheck:
+      test: echo 'db.runCommand("ping").ok' | mongosh localhost:27017/test --quiet
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  mongo-express:
+    image: mongo-express
+    container_name: trinity_mongo_express_dev
+    restart: unless-stopped
+    ports:
+      - "8081:8081"
+    environment:
+      ME_CONFIG_MONGODB_ADMINUSERNAME: root
+      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_PASSWORD:-92110}
+      ME_CONFIG_MONGODB_SERVER: mongo
+      ME_CONFIG_MONGODB_AUTH_DATABASE: admin
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - trinity-network
+
+  backend:
+    image: ${BACKEND_IMAGE:-backend:dev}
+    container_name: trinity_backend_dev
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      target: development
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      MONGODB_URI: mongodb://root:${MONGO_PASSWORD:-92110}@mongo:27017/eshop?authSource=admin
+      JWT_SECRET: ${JWT_SECRET}
+      PAYPAL_CLIENT_ID: ${PAYPAL_CLIENT_ID}
+      PAYPAL_CLIENT_SECRET: ${PAYPAL_CLIENT_SECRET}
+      PAYPAL_MODE: sandbox
+      PORT: 4000
+    ports:
+      - "4000:4000"
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+      - backend-logs-dev:/app/logs
+    depends_on:
+      mongo:
+        condition: service_healthy
+    networks:
+      - trinity-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:4000/products"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  frontend:
+    image: ${FRONTEND_IMAGE:-frontend:dev}
+    container_name: trinity_frontend_dev
+    build:
+      context: ./trinity
+      dockerfile: Dockerfile
+      target: development
+    restart: unless-stopped
+    environment:
+      NODE_ENV: development
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    ports:
+      - "3000:3000"
+    volumes:
+      - ./trinity:/app
+      - /app/node_modules
+      - /app/.next
+    depends_on:
+      - backend
+    networks:
+      - trinity-network
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost:3000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+volumes:
+  mongo-data-dev:
+    driver: local
+  mongo-logs-dev:
+    driver: local
+  backend-logs-dev:
+    driver: local
+
+networks:
+  trinity-network:
+    driver: bridge

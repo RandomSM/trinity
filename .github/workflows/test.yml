@@ -1,0 +1,172 @@
+name: Test & Coverage
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  # Backend Tests
+  test-backend:
+    name: Backend Tests
+    runs-on: ubuntu-latest
+    
+    services:
+      mongodb:
+        image: mongo:6
+        env:
+          MONGO_INITDB_ROOT_USERNAME: root
+          MONGO_INITDB_ROOT_PASSWORD: 92110
+        ports:
+          - 27017:27017
+        options: >-
+          --health-cmd "mongosh --eval 'db.adminCommand({ping: 1})'"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    
+    env:
+      MONGODB_URI: mongodb://root:92110@localhost:27017/eshop_test?authSource=admin
+      JWT_SECRET: test_secret_key_for_ci
+      PAYPAL_CLIENT_ID: test_client_id
+      PAYPAL_CLIENT_SECRET: test_client_secret
+      PAYPAL_MODE: sandbox
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: backend/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: backend
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: backend
+        run: npm run test:coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./backend/coverage/cobertura-coverage.xml
+          flags: backend
+          name: backend-coverage
+          fail_ci_if_error: true
+      
+      - name: Archive coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage/
+          retention-days: 7
+
+  # Frontend Tests
+  test-frontend:
+    name: Frontend Tests
+    runs-on: ubuntu-latest
+    
+    env:
+      NEXT_PUBLIC_API_URL: http://localhost:4000
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: trinity/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: trinity
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: trinity
+        run: npm run test:coverage
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./trinity/coverage/cobertura-coverage.xml
+          flags: frontend
+          name: frontend-coverage
+          fail_ci_if_error: true
+      
+      - name: Archive coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: frontend-coverage
+          path: trinity/coverage/
+          retention-days: 7
+
+  # Mobile Tests
+  test-mobile:
+    name: Mobile Tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: trinity-mobile/package-lock.json
+      
+      - name: Install dependencies
+        working-directory: trinity-mobile
+        run: npm ci
+      
+      - name: Run tests with coverage
+        working-directory: trinity-mobile
+        run: npm test -- --coverage --watchAll=false
+      
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./trinity-mobile/coverage/cobertura-coverage.xml
+          flags: mobile
+          name: mobile-coverage
+          fail_ci_if_error: false
+      
+      - name: Archive coverage artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: mobile-coverage
+          path: trinity-mobile/coverage/
+          retention-days: 7
+
+  # Coverage Summary
+  coverage-summary:
+    name: Coverage Summary
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, test-mobile]
+    if: always()
+    
+    steps:
+      - name: Download all coverage artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: coverage-reports
+      
+      - name: Display coverage summary
+        run: |
+          echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Component | Coverage |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----------|----------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Backend   | See Codecov |" >> $GITHUB_STEP_SUMMARY
+          echo "| Frontend  | See Codecov |" >> $GITHUB_STEP_SUMMARY
+          echo "| Mobile    | See Codecov |" >> $GITHUB_STEP_SUMMARY
