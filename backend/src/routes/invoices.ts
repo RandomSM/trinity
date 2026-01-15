@@ -144,7 +144,7 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
       return res.status(404).json({ error: "Facture non trouvée" });
     }
 
-    // Vérifie que le statut est "en préparation"
+
     if (invoice.deliveryStatus !== "en préparation") {
       return res.status(400).json({ 
         error: "Le remboursement n'est possible que pour les commandes en préparation" 

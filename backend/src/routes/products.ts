@@ -12,7 +12,6 @@ routeProducts.get("/", async (req, res) => {
     const includeTotal = req.query.includeTotal === "true" || page === 1;
     const db = await connectDB("eshop");
     
-    // Projection : ne récupère que les champs nécessaires
     const projection = {
       _id: 1,
       product_name: 1,
@@ -27,7 +26,6 @@ routeProducts.get("/", async (req, res) => {
       stock: 1,
     };
 
-    // Récupère les produits
     const products = await db
       .collection("products")
       .find({}, { projection })
@@ -35,7 +33,6 @@ routeProducts.get("/", async (req, res) => {
       .limit(limit)
       .toArray();
 
-    // Ne compte le total que pour la première page
     const total = includeTotal
       ? await db.collection("products").estimatedDocumentCount()
       : 0;
@@ -67,7 +64,6 @@ routeProducts.post("/", async (req, res) => {
   }
 });
 
-// GET /detail/:id doit être AVANT PUT et DELETE pour être matché en premier
 routeProducts.get("/detail/:id", async (req, res) => {
   try {
     const { id } = req.params;
@@ -77,12 +73,8 @@ routeProducts.get("/detail/:id", async (req, res) => {
     const db = await connectDB("eshop");
     const collection = db.collection("products");
     
-    // Dans Open Food Facts, _id et code sont stockés comme strings
-    // Utilise find() au lieu de findOne() pour éviter les problèmes de typage
     const products = await collection.find({ _id: id as any }).limit(1).toArray();
-    const product = products[0] || null;
-
-    logger.info("Produit trouve:", product ? "OUI" : "NON");
+    const product = products[0] ?? null;
 
     if (!product) {
       return res.status(404).json({ error: "Produit non trouvé" });
@@ -95,7 +87,6 @@ routeProducts.get("/detail/:id", async (req, res) => {
   }
 });
 
-// PUT et DELETE après GET pour éviter les conflits
 routeProducts.put("/:id", async (req, res) => {
   try {
     const { id } = req.params;
