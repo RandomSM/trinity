@@ -1,6 +1,7 @@
 import { Router } from "express";
 import { connectDB } from "../lib/mongodb";
 import { ObjectId } from "mongodb";
+import logger from "../lib/logger";
 
 const routeProducts = Router();
 
@@ -47,7 +48,7 @@ routeProducts.get("/", async (req, res) => {
       hasMore: products.length === limit,
     });
   } catch (err) {
-    console.error("GET /products error:", err);
+    logger.error("GET /products error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -61,7 +62,7 @@ routeProducts.post("/", async (req, res) => {
 
     res.status(201).json(result);
   } catch (err) {
-    console.error("POST /products error:", err);
+    logger.error("POST /products error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -70,8 +71,8 @@ routeProducts.post("/", async (req, res) => {
 routeProducts.get("/detail/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    console.log("=== GET /products/detail/:id ===");
-    console.log("ID reçu:", id);
+    logger.info("GET /products/detail/:id");
+    logger.info("ID recu:", id);
     
     const db = await connectDB("eshop");
     const collection = db.collection("products");
@@ -81,7 +82,7 @@ routeProducts.get("/detail/:id", async (req, res) => {
     const products = await collection.find({ _id: id as any }).limit(1).toArray();
     const product = products[0] || null;
 
-    console.log("Produit trouvé:", product ? "OUI" : "NON");
+    logger.info("Produit trouve:", product ? "OUI" : "NON");
 
     if (!product) {
       return res.status(404).json({ error: "Produit non trouvé" });
@@ -89,7 +90,7 @@ routeProducts.get("/detail/:id", async (req, res) => {
 
     res.json(product);
   } catch (err) {
-    console.error("GET /products/detail/:id error:", err);
+    logger.error("GET /products/detail/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -107,7 +108,7 @@ routeProducts.put("/:id", async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error("PUT /products error:", err);
+    logger.error("PUT /products error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -123,7 +124,7 @@ routeProducts.delete("/:id", async (req, res) => {
 
     res.json(result);
   } catch (err) {
-    console.error("DELETE /products error:", err);
+    logger.error("DELETE /products error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

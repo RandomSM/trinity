@@ -1,17 +1,18 @@
 import { Router } from "express";
 import { connectDB } from "../lib/mongodb";
 import { ObjectId } from "mongodb";
+import logger from "../lib/logger";
 
 const routeReport = Router();
 
 // GET / - Get latest KPIs (must be first!)
 routeReport.get("/", async (req, res) => {
-  console.log("=== GET /reports appelé ===");
+  logger.info("GET /reports appele");
   try {
     const eshopDb = await connectDB("eshop");
     const kpisCollection = eshopDb.collection("kpis");
 
-    console.log("Recherche du dernier KPI...");
+    logger.info("Recherche du dernier KPI...");
 
     // Get the most recent KPI snapshot
     const latestKpi = await kpisCollection
@@ -50,7 +51,7 @@ routeReport.get("/", async (req, res) => {
 
     res.json(latestKpi[0]);
   } catch (error) {
-    console.error("Error fetching KPIs:", error);
+    logger.error("Error fetching KPIs:", error);
     res.status(500).json({ 
       error: "Failed to fetch KPIs", 
       details: error instanceof Error ? error.message : "Unknown error" 
@@ -62,7 +63,7 @@ routeReport.get("/", async (req, res) => {
 // Fixed: productId as strings not ObjectId - FORCED RELOAD
 const updateKpisHandler = async (req: any, res: any) => {
   try {
-    console.log("=== UPDATE KPIs START V2 ===");
+    logger.info("UPDATE KPIs START V2");
     const db = await connectDB();
     const eshopDb = await connectDB("eshop");
     const invoicesCollection = db.collection("invoices");
@@ -76,7 +77,7 @@ const updateKpisHandler = async (req: any, res: any) => {
     const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
-    console.log("Calculating KPI 1: Average Purchase Value");
+    logger.info("Calculating KPI 1: Average Purchase Value");
     // KPI 1: Average Purchase Value (Last 30 Days)
     const avgPurchaseResult = await invoicesCollection.aggregate([
       { 
@@ -96,9 +97,9 @@ const updateKpisHandler = async (req: any, res: any) => {
 
     const avgPurchase = avgPurchaseResult[0]?.avgValue || 0;
     const totalPurchases30Days = avgPurchaseResult[0]?.count || 0;
-    console.log("KPI 1 done:", avgPurchase, totalPurchases30Days);
+    logger.info("KPI 1 done:", avgPurchase, totalPurchases30Days);
 
-    console.log("Calculating KPI 2: Top Products");
+    logger.info("Calculating KPI 2: Top Products");
     // KPI 2: Top 10 Most Bought Products (All Time)
     const topProductsResult = await invoicesCollection.aggregate([
       { $match: { status: { $ne: "remboursée" } } },
@@ -114,12 +115,12 @@ const updateKpisHandler = async (req: any, res: any) => {
       { $limit: 10 }
     ]).toArray();
 
-    console.log("Top products aggregation result:", JSON.stringify(topProductsResult.slice(0, 2)));
+    logger.info("Top products aggregation result:", JSON.stringify(topProductsResult.slice(0, 2)));
 
     // Enrich with product details
     const topProducts = await Promise.all(
       topProductsResult.map(async (item: any) => {
-        console.log("Processing product ID:", item._id, "type:", typeof item._id);
+        logger.info("Processing product ID:", item._id, "type:", typeof item._id);
         // Les productId sont des strings (codes-barres), pas des ObjectId
         const product = await productsCollection.findOne({ _id: item._id } as any);
         return {
@@ -186,7 +187,7 @@ const updateKpisHandler = async (req: any, res: any) => {
     });
 
     // Additional KPIs
-    console.log("Calculating additional KPIs");
+    logger.info("Calculating additional KPIs");
     
     // Total Revenue (All Time)
     const totalRevenueResult = await invoicesCollection.aggregate([
@@ -252,7 +253,7 @@ const updateKpisHandler = async (req: any, res: any) => {
       { $limit: 5 }
     ]).toArray();
 
-    console.log("Additional KPIs calculated");
+    logger.info("Additional KPIs calculated");
 
     // KPI 5: Revenue Trends (Daily for last 7 days)
     const revenueTrends = await invoicesCollection.aggregate([
@@ -373,7 +374,7 @@ const updateKpisHandler = async (req: any, res: any) => {
       kpis: kpiDocument
     });
   } catch (error) {
-    console.error("Error updating KPIs:", error);
+    logger.error("Error updating KPIs:", error);
     res.status(500).json({ 
       error: "Failed to update KPIs", 
       details: error instanceof Error ? error.message : "Unknown error" 
@@ -402,7 +403,7 @@ routeReport.get("/trending-products", async (req, res) => {
 
     res.json(latestKpi[0].trendingProducts);
   } catch (error) {
-    console.error("Error fetching trending products:", error);
+    logger.error("Error fetching trending products:", error);
     res.status(500).json({ error: "Failed to fetch trending products" });
   }
 });
@@ -422,7 +423,7 @@ routeReport.get("/history", async (req, res) => {
 
     res.json(history);
   } catch (error) {
-    console.error("Error fetching KPI history:", error);
+    logger.error("Error fetching KPI history:", error);
     res.status(500).json({ error: "Failed to fetch KPI history" });
   }
 });

@@ -3,16 +3,17 @@ import { paypalClient } from "../lib/paypalClient";
 import paypal from "@paypal/checkout-server-sdk";
 import { connectDB } from "../lib/mongodb";
 import { ObjectId } from "mongodb";
+import logger from "../lib/logger";
 
 const routerPaypal = Router();
 
 routerPaypal.post("/create-order", async (req, res) => {
   const { total, returnUrl, cancelUrl } = req.body;
 
-  console.log("=== PayPal create-order ===");
-  console.log("Total reçu:", total, "Type:", typeof total);
-  console.log("Return URL:", returnUrl);
-  console.log("Cancel URL:", cancelUrl);
+  logger.info("PayPal create-order");
+  logger.info("Total recu:", total, "Type:", typeof total);
+  logger.info("Return URL:", returnUrl);
+  logger.info("Cancel URL:", cancelUrl);
 
   if (!total || isNaN(total) || total <= 0) {
     return res.status(400).json({ error: "Total invalide ou manquant" });
@@ -50,10 +51,10 @@ routerPaypal.post("/create-order", async (req, res) => {
 
   try {
     const order = await paypalClient.execute(request);
-    console.log("Commande PayPal créée:", order.result.id);
+    logger.info("Commande PayPal creee:", order.result.id);
     res.json(order.result);
   } catch (err: any) {
-    console.error("Erreur PayPal create-order:", err.message || err);
+    logger.error("Erreur PayPal create-order:", err.message || err);
     res.status(500).json({ error: "Erreur création commande PayPal", details: err.message });
   }
 });
@@ -129,24 +130,24 @@ routerPaypal.post("/capture-order", async (req, res) => {
     });
 
     await Promise.all(stockUpdatePromises);
-    console.log(`✅ Stock mis à jour pour ${invoiceItems.length} produits`);
+    logger.info(`Stock mis a jour pour ${invoiceItems.length} produits`);
 
     res.json({
       capture: capture.result,
       invoice: result.insertedId,
     });
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     res.status(500).json({ error: "Erreur capture PayPal ou création facture" });
   }
 });
 
 routerPaypal.get("/success", (req, res) => {
-  console.log("✅ PayPal success redirect hit");
+  logger.info("PayPal success redirect hit");
   
   // Récupérer l'URL de retour depuis les query params si fournie
   const returnUrl = req.query.returnUrl as string || 'trinitymobile://paypal/success';
-  console.log("🔗 Return URL:", returnUrl);
+  logger.info("Return URL:", returnUrl);
   
   res.send(`
     <!DOCTYPE html>
@@ -216,7 +217,6 @@ routerPaypal.get("/success", (req, res) => {
       </div>
       <script>
         // Redirection immédiate
-        console.log('Redirection vers:', '${returnUrl}');
         window.location.href = '${returnUrl}';
         
         // Tentative de fermeture après un court délai
@@ -230,11 +230,11 @@ routerPaypal.get("/success", (req, res) => {
 });
 
 routerPaypal.get("/cancel", (req, res) => {
-  console.log("❌ PayPal cancel redirect hit");
+  logger.warn("PayPal cancel redirect hit");
   
   // Récupérer l'URL de retour depuis les query params si fournie
   const cancelUrl = req.query.cancelUrl as string || 'trinitymobile://paypal/cancel';
-  console.log("🔗 Cancel URL:", cancelUrl);
+  logger.info("Cancel URL:", cancelUrl);
   
   res.send(`
     <!DOCTYPE html>
@@ -279,7 +279,6 @@ routerPaypal.get("/cancel", (req, res) => {
       </div>
       <script>
         // Redirection immédiate
-        console.log('Redirection vers:', '${cancelUrl}');
         window.location.href = '${cancelUrl}';
         
         // Tentative de fermeture après un court délai

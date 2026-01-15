@@ -2,6 +2,7 @@ import { Router } from "express";
 import { connectDB } from "../lib/mongodb";
 import { ObjectId } from "mongodb";
 import { authenticateToken, requireOwnerOrAdmin, AuthRequest } from "../middleware/auth";
+import logger from "../lib/logger";
 
 const invoiceRoutes = Router();
 
@@ -38,7 +39,7 @@ invoiceRoutes.post("/:id", authenticateToken, requireOwnerOrAdmin, async (req: A
 
     res.status(201).json({ message: "Facture créée", invoiceId: result.insertedId });
   } catch (err) {
-    console.error("POST /invoice/:id error:", err);
+    logger.error("POST /invoice/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -50,7 +51,7 @@ invoiceRoutes.get("/", authenticateToken, async (req: AuthRequest, res) => {
     const invoices = await db.collection("invoices").find().toArray();
     res.json(invoices);
   } catch (err) {
-    console.error("GET /invoice error:", err);
+    logger.error("GET /invoice error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -79,7 +80,7 @@ invoiceRoutes.get("/user/:id", authenticateToken, requireOwnerOrAdmin, async (re
 
     res.json(invoices);
   } catch (err) {
-    console.error("GET /invoice/user/:id error:", err);
+    logger.error("GET /invoice/user/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -98,7 +99,7 @@ invoiceRoutes.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
 
     res.json(invoice);
   } catch (err) {
-    console.error("GET /invoice/:id error:", err);
+    logger.error("GET /invoice/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -125,7 +126,7 @@ invoiceRoutes.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
 
     res.json({ message: "Facture mise à jour avec succès" });
   } catch (err) {
-    console.error("PUT /invoice/:id error:", err);
+    logger.error("PUT /invoice/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -228,14 +229,14 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
 
     if (!refundResponse.ok) {
       const errorData = await refundResponse.json();
-      console.error("❌ PayPal refund error:", JSON.stringify(errorData, null, 2));
+      logger.error("PayPal refund error:", JSON.stringify(errorData, null, 2));
       return res.status(400).json({ error: "Erreur lors du remboursement PayPal", details: errorData });
     }
 
     const refundData = await refundResponse.json();
-    console.log(`✅ PayPal refund successful! Refund ID: ${refundData.id}`);
-    console.log(`💡 Check the BUYER's PayPal Sandbox account to see the refund`);
-    console.log(`📧 Full refund response:`, JSON.stringify(refundData, null, 2));
+    logger.info(`PayPal refund successful! Refund ID: ${refundData.id}`);
+    logger.info(`Check the BUYER's PayPal Sandbox account to see the refund`);
+    logger.info(`Full refund response:`, JSON.stringify(refundData, null, 2));
 
     // Update invoice based on full or partial refund
     const updateData: any = {
@@ -274,7 +275,7 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
       refundAmount 
     });
   } catch (err) {
-    console.error("POST /invoice/:id/refund error:", err);
+    logger.error("POST /invoice/:id/refund error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -293,7 +294,7 @@ invoiceRoutes.delete("/:id", authenticateToken, async (req: AuthRequest, res) =>
 
     res.json({ message: "Facture supprimée avec succès" });
   } catch (err) {
-    console.error("DELETE /invoice/:id error:", err);
+    logger.error("DELETE /invoice/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });

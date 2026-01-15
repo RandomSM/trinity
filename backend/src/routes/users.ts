@@ -4,6 +4,7 @@ import { ObjectId } from "mongodb";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { authenticateToken, requireAdmin, requireOwnerOrAdmin, AuthRequest } from "../middleware/auth";
+import logger from "../lib/logger";
 
 const usersRoutes = Router();
 const SECRET = process.env.JWT_SECRET!;
@@ -27,7 +28,7 @@ usersRoutes.get("/", authenticateToken, requireAdmin, async (req, res) => {
 
     res.json(safeUsers);
   } catch (err) {
-    console.error("GET /users error:", err);
+    logger.error("GET /users error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -35,30 +36,30 @@ usersRoutes.get("/", authenticateToken, requireAdmin, async (req, res) => {
 // Public - User login
 usersRoutes.post("/login", async (req, res) => {
   const { email, password } = req.body;
-  console.log('📥 Login request received:', { email, passwordLength: password?.length });
+  logger.info('Login request received:', { email, passwordLength: password?.length });
   
   const db = await connectDB();
   const users = db.collection("users");
 
   if (!email || !password) {
-    console.log('❌ Login failed: Missing credentials');
+    logger.warn('Login failed: Missing credentials');
     return res.status(400).json({ error: "Email et mot de passe requis" });
   }
 
   const user = await users.findOne({ email });
   if (!user) {
-    console.log('❌ Login failed: User not found for email:', email);
+    logger.warn('Login failed: User not found for email:', email);
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
   const isMatch = await bcrypt.compare(password, user.password);
   if (!isMatch) {
-    console.log('❌ Login failed: Password mismatch for email:', email);
+    logger.warn('Login failed: Password mismatch for email:', email);
     return res.status(401).json({ error: "Invalid credentials" });
   }
 
   const token = jwt.sign({ id: user._id, email: user.email, isAdmin: user.isAdmin }, SECRET, { expiresIn: "1d" });
-  console.log('✅ Login successful for:', email);
+  logger.info('Login successful for:', email);
 
   res.json({ 
     token, 
@@ -104,7 +105,7 @@ usersRoutes.post("/register", async (req, res) => {
 
     res.status(201).json(result);
   } catch (err) {
-    console.error("POST /users/register error:", err);
+    logger.error("POST /users/register error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -137,7 +138,7 @@ usersRoutes.put("/edit", authenticateToken, requireOwnerOrAdmin, async (req: Aut
 
     res.json({ message: "Profil mis à jour avec succès" });
   } catch (err) {
-    console.error("PUT /users error:", err);
+    logger.error("PUT /users error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -159,7 +160,7 @@ usersRoutes.delete("/delete", authenticateToken, requireOwnerOrAdmin, async (req
 
     res.json({ message: "Utilisateur supprimé avec succès" });
   } catch (err) {
-    console.error("DELETE /users error:", err);
+    logger.error("DELETE /users error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -188,7 +189,7 @@ usersRoutes.put("/admin-edit/:id", authenticateToken, requireAdmin, async (req: 
 
     res.json({ message: "Utilisateur modifié avec succès" });
   } catch (err) {
-    console.error("PUT /users/admin-edit error:", err);
+    logger.error("PUT /users/admin-edit error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -196,30 +197,30 @@ usersRoutes.put("/admin-edit/:id", authenticateToken, requireAdmin, async (req: 
 // User can view their own profile, admin can view any
 usersRoutes.get("/:id", authenticateToken, requireOwnerOrAdmin, async (req: AuthRequest, res) => {
   try {
-    console.log(`GET /users/:id - Recherche utilisateur avec ID: ${req.params.id}`);
+    logger.info(`GET /users/:id - Recherche utilisateur avec ID: ${req.params.id}`);
     const db = await connectDB();
     
     const { id } = req.params;
     
     // Vérifie si l'ID est un ObjectId valide
     if (!id || !ObjectId.isValid(id)) {
-      console.log(`ID invalide: ${id}`);
+      logger.warn(`ID invalide: ${id}`);
       return res.status(400).json({ error: "ID invalide" });
     }
     
     const user = await db.collection("users").findOne({ _id: new ObjectId(id) });
     
     if (!user) {
-      console.log(`Utilisateur non trouvé pour l'ID: ${id}`);
+      logger.warn(`Utilisateur non trouve pour l'ID: ${id}`);
       
       // Vérifie combien d'utilisateurs existent
       const count = await db.collection("users").countDocuments();
-      console.log(`Nombre total d'utilisateurs dans la base: ${count}`);
+      logger.info(`Nombre total d'utilisateurs dans la base: ${count}`);
       
       return res.status(404).json({ error: "Utilisateur non trouvé" });
     }
 
-    console.log(`Utilisateur trouvé: ${user.email}`);
+    logger.info(`Utilisateur trouve: ${user.email}`);
     const safeUser = {
       _id: user._id,
       email: user.email,
@@ -232,7 +233,7 @@ usersRoutes.get("/:id", authenticateToken, requireOwnerOrAdmin, async (req: Auth
 
     res.json(safeUser);
   } catch (err) {
-    console.error("GET /users/:id error:", err);
+    logger.error("GET /users/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
@@ -249,7 +250,7 @@ usersRoutes.delete("/:id", authenticateToken, requireAdmin, async (req: AuthRequ
 
     res.json({ message: "Utilisateur supprimé avec succès" });
   } catch (err) {
-    console.error("DELETE /users/:id error:", err);
+    logger.error("DELETE /users/:id error:", err);
     res.status(500).json({ error: "Erreur serveur" });
   }
 });
