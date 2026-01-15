@@ -9,7 +9,7 @@ CMD ["npm", "run", "dev"]
 
 FROM base AS production
 ENV NODE_ENV=production
-RUN npm install --omit=dev
+RUN npm install --omit=dev && npm install -g typescript
 COPY . .
 RUN npm run build
 CMD ["npm", "run", "start"]

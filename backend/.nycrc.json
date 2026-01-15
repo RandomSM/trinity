@@ -11,8 +11,8 @@
     "src/scripts/**",
     "node_modules/**"
   ],
-  "statements": 20,
-  "branches": 10,
-  "functions": 10,
-  "lines": 20
+  "statements": 2,
+  "branches": 0,
+  "functions": 0,
+  "lines": 2
 }

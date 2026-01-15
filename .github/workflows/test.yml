@@ -2,9 +2,9 @@ name: Test & Coverage
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main, dev]
   pull_request:
-    branches: [main, develop]
+    branches: [main, dev]
 
 jobs:
   # Backend Tests
@@ -27,7 +27,8 @@ jobs:
           --health-retries 5
     
     env:
-      MONGODB_URI: mongodb://root:92110@localhost:27017/eshop_test?authSource=admin
+      MONGODB_URI: mongodb://root:92110@localhost:27017/eshop?authSource=admin
+      MONGODB_DB: eshop
       JWT_SECRET: test_secret_key_for_ci
       PAYPAL_CLIENT_ID: test_client_id
       PAYPAL_CLIENT_SECRET: test_client_secret
@@ -163,10 +164,8 @@ jobs:
       
       - name: Display coverage summary
         run: |
-          echo "## Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Coverage |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|----------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Backend   | See Codecov |" >> $GITHUB_STEP_SUMMARY
-          echo "| Frontend  | See Codecov |" >> $GITHUB_STEP_SUMMARY
-          echo "| Mobile    | See Codecov |" >> $GITHUB_STEP_SUMMARY
+          echo "Test Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          echo "Component | Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "Backend   | See Codecov" >> $GITHUB_STEP_SUMMARY
+          echo "Frontend  | See Codecov" >> $GITHUB_STEP_SUMMARY
+          echo "Mobile    | See Codecov" >> $GITHUB_STEP_SUMMARY
