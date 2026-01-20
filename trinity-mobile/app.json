@@ -1,0 +1,47 @@
+{
+  "expo": {
+    "name": "Trinity E-Shop",
+    "slug": "trinity-mobile",
+    "owner": "itaro9",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "newArchEnabled": true,
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#52B46B"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.trinity.eshop",
+      "infoPlist": {
+        "NSCameraUsageDescription": "$(PRODUCT_NAME) nécessite l'accès à la caméra pour scanner les codes-barres des produits."
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#52B46B"
+      },
+      "package": "com.trinity.eshop",
+      "permissions": [
+        "CAMERA",
+        "android.permission.CAMERA"
+      ],
+      "edgeToEdgeEnabled": true,
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "favicon": "./assets/favicon.png"
+    },
+    "scheme": "trinitymobile",
+    "extra": {
+      "eas": {
+        "projectId": "b29c5763-5ef0-4836-978a-fb1678f2ac9d"
+      }
+    }
+  }
+}
+

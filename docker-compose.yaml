@@ -11,7 +11,7 @@ services:
     ports:
       - "27017:27017"
     volumes:
-      - mongo-data:/data/db
+      - trinity_mongo-data:/data/db
 
   mongo-express:
     image: mongo-express
@@ -49,21 +49,19 @@ services:
     build:
       context: ./trinity
       dockerfile: Dockerfile
+      target: development
     restart: always
     env_file:
-      - ./trinity/.env.${NODE_ENV:-development}
+      - ./trinity/.env.development
     ports:
       - "3000:3000"
     volumes:
       - ./trinity:/app
       - /app/node_modules
+      - /app/.next
     depends_on:
       - backend
-    command: >
-      sh -c "if [ \"${NODE_ENV}\" = \"development\" ];
-             then npm run dev;
-             else npm run start;
-             fi"
       
 volumes:
-  mongo-data:
+  trinity_mongo-data:
+    external: true

@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only src/server.ts",
     "start": "ts-node src/server.ts",
-    "build": "tsc",
+    "build": "tsc -p tsconfig.build.json",
     "test": "mocha --require ts-node/register 'src/**/*.test.ts' --exit",
     "test:coverage": "nyc --reporter=lcov --reporter=text --reporter=cobertura npm run test"
   },
