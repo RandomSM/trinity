@@ -13,18 +13,19 @@ jest.mock('expo-web-browser', () => ({
 }));
 
 // Mock expo-camera
-jest.mock('react-native-vision-camera', () => ({
-  Camera: {
-    requestCameraPermission: jest.fn(() => Promise.resolve('granted')),
-    getCameraPermissionStatus: jest.fn(() => 'granted'),
+jest.mock('expo-camera', () => ({
+  Camera: jest.fn(({ children }) => children),
+  CameraView: jest.fn(({ children }) => children),
+  useCameraPermissions: jest.fn(() => [
+    { status: 'granted', granted: true },
+    jest.fn(() => Promise.resolve({ status: 'granted', granted: true })),
+  ]),
+}));
+
+jest.mock('expo-barcode-scanner', () => ({
+  BarCodeScanner: {
+    requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
   },
-  useCameraDevice: jest.fn(() => ({
-    id: 'mock-camera',
-    position: 'back',
-  })),
-  useCodeScanner: jest.fn(() => ({
-    onCodeScanned: jest.fn(),
-  })),
 }));
 
 // Mock expo-linking

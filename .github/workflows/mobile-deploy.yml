@@ -45,7 +45,7 @@ jobs:
       
       - name: Publish update to Expo
         working-directory: trinity-mobile
-        run: npx expo publish --non-interactive
+        run: npx eas update --branch production --non-interactive
 
   build:
     name: Build APK
