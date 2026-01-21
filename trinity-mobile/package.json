@@ -11,7 +11,7 @@
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
-    "publish": "eas update --branch production --non-interactive",
+    "publish": "eas update --branch production --message \"Auto update from CI\" --non-interactive",
     "build:android": "eas build --platform android --profile preview --non-interactive"
   },
   "dependencies": {
@@ -39,9 +39,9 @@
     "@testing-library/jest-native": "^5.4.3",
     "@testing-library/react-native": "^12.8.1",
     "@types/jest": "^29.5.12",
-    "eas-cli": "^14.3.3",
     "@types/react": "~19.1.0",
     "babel-preset-expo": "^54.0.9",
+    "eas-cli": "^16.28.0",
     "jest": "^29.7.0",
     "jest-expo": "^52.0.3",
     "react-test-renderer": "19.2.3",

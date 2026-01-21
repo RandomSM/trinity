@@ -275,8 +275,7 @@ describe('ProductCard', () => {
       </Provider>
     );
 
-    expect(getByText(/Nutriscore/)).toBeTruthy();
-    expect(getByText(/A/)).toBeTruthy();
+    expect(getByText('Nutriscore A')).toBeTruthy();
   });
 
   it('should render with nutriscore B', () => {
@@ -289,7 +288,7 @@ describe('ProductCard', () => {
       </Provider>
     );
 
-    expect(getByText(/B/)).toBeTruthy();
+    expect(getByText('Nutriscore B')).toBeTruthy();
   });
 
   it('should render with nutriscore C', () => {
@@ -302,7 +301,7 @@ describe('ProductCard', () => {
       </Provider>
     );
 
-    expect(getByText(/C/)).toBeTruthy();
+    expect(getByText('Nutriscore C')).toBeTruthy();
   });
 
   it('should render with nutriscore D', () => {
@@ -315,6 +314,6 @@ describe('ProductCard', () => {
       </Provider>
     );
 
-    expect(getByText(/D/)).toBeTruthy();
+    expect(getByText('Nutriscore D')).toBeTruthy();
   });
 });
