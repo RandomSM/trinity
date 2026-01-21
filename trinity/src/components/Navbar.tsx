@@ -14,7 +14,6 @@ export default function Navbar() {
   const cartCount = cartItems.reduce((total, item) => total + item.quantity, 0);
   const user = useSelector((state: RootState) => state.user.user);
   const dispatch = useDispatch();
-  const router = useRouter();
 
   const handleLogout = () => {
     // Dispatch Redux logout actions

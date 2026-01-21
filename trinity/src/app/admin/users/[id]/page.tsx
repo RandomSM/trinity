@@ -75,7 +75,13 @@ export default function AdminUserDetailPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (!user) {
+      if (user) {
+        if (!user.isAdmin) {
+          router.push("/");
+          return;
+        }
+        setCheckingAuth(false);
+      } else {
         if (!authAPI.isAuthenticated()) {
           router.push("/login");
           return;
@@ -103,12 +109,6 @@ export default function AdminUserDetailPage() {
           console.error(err);
           router.push("/login");
         }
-      } else {
-        if (!user.isAdmin) {
-          router.push("/");
-          return;
-        }
-        setCheckingAuth(false);
       }
     };
 
@@ -257,6 +257,21 @@ export default function AdminUserDetailPage() {
     setSelectedItems(newSelected);
   };
 
+  const getStatusBadgeClass = (status: string) => {
+    if (status === "payée" || status === "paid") return "badge-success";
+    if (status === "remboursée") return "badge-error";
+    if (status === "partiellement remboursée") return "badge-warning";
+    return "badge-warning";
+  };
+
+  const getDeliveryStatusBadgeClass = (deliveryStatus: string) => {
+    if (deliveryStatus === "en préparation") return "badge-info";
+    if (deliveryStatus === "expédiée") return "badge-primary";
+    if (deliveryStatus === "livrée") return "badge-success";
+    if (deliveryStatus === "annulée") return "badge-error";
+    return "badge-ghost";
+  };
+
   const handleRefund = async (invoiceId: string) => {
     const invoice = invoices.find(inv => inv._id === invoiceId);
     
@@ -342,7 +357,7 @@ export default function AdminUserDetailPage() {
     );
   }
 
-  if (!user || !user.isAdmin) {
+  if (!user?.isAdmin) {
     return null;
   }
 
@@ -363,7 +378,127 @@ export default function AdminUserDetailPage() {
           </div>
 
           <div className="p-8">
-            {!editing ? (
+            {editing ? (
+              <div className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="form-control">
+                    <label className="label" htmlFor="email"><span className="label-text font-semibold">Email</span></label>
+                    <input
+                      id="email"
+                      type="email"
+                      className="input input-bordered rounded-full"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label" htmlFor="firstName"><span className="label-text font-semibold">Prénom</span></label>
+                    <input
+                      id="firstName"
+                      type="text"
+                      className="input input-bordered rounded-full"
+                      value={formData.firstName}
+                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label" htmlFor="lastName"><span className="label-text font-semibold">Nom</span></label>
+                    <input
+                      id="lastName"
+                      type="text"
+                      className="input input-bordered rounded-full"
+                      value={formData.lastName}
+                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
+                    />
+                  </div>
+                  <div className="form-control">
+                    <label className="label" htmlFor="phone"><span className="label-text font-semibold">Téléphone</span></label>
+                    <input
+                      id="phone"
+                      type="tel"
+                      className="input input-bordered rounded-full"
+                      value={formData.phone}
+                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="form-control">
+                  <label className="label cursor-pointer justify-start gap-4">
+                    <input
+                      type="checkbox"
+                      className="checkbox checkbox-primary"
+                      checked={formData.isAdmin}
+                      onChange={(e) => setFormData({ ...formData, isAdmin: e.target.checked })}
+                    />
+                    <span className="label-text font-semibold">Administrateur</span>
+                  </label>
+                </div>
+
+                <div className="mt-8">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Adresse de facturation</h3>
+                  <div className="space-y-4">
+                    <div className="form-control">
+                      <label className="label" htmlFor="address"><span className="label-text font-semibold">Adresse</span></label>
+                      <input
+                        id="address"
+                        type="text"
+                        className="input input-bordered rounded-full"
+                        value={formData.billing.address}
+                        onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, address: e.target.value } })}
+                      />
+                    </div>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div className="form-control">
+                        <label className="label" htmlFor="zipCode"><span className="label-text font-semibold">Code postal</span></label>
+                        <input
+                          id="zipCode"
+                          type="text"
+                          className="input input-bordered rounded-full"
+                          value={formData.billing.zipCode}
+                          onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, zipCode: e.target.value } })}
+                        />
+                      </div>
+                      <div className="form-control">
+                        <label className="label" htmlFor="city"><span className="label-text font-semibold">Ville</span></label>
+                        <input
+                          id="city"
+                          type="text"
+                          className="input input-bordered rounded-full"
+                          value={formData.billing.city}
+                          onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, city: e.target.value } })}
+                        />
+                      </div>
+                    </div>
+                    <div className="form-control">
+                      <label className="label" htmlFor="country"><span className="label-text font-semibold">Pays</span></label>
+                      <input
+                        id="country"
+                        type="text"
+                        className="input input-bordered rounded-full"
+                        value={formData.billing.country}
+                        onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, country: e.target.value } })}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex gap-4 mt-8">
+                  <button
+                    onClick={handleSave}
+                    className="btn bg-[#52B46B] hover:bg-[#449958] text-white border-none rounded-full px-8 flex-1"
+                  >
+                    Sauvegarder
+                  </button>
+                  <button
+                    onClick={() => setEditing(false)}
+                    className="btn btn-outline rounded-full px-8"
+                  >
+                    Annuler
+                  </button>
+                </div>
+              </div>
+            ) : (
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="bg-gray-50 p-4 rounded-xl">
@@ -556,23 +691,11 @@ export default function AdminUserDetailPage() {
                             {new Date(invoice.createdAt).toLocaleDateString()}
                           </p>
                           <div className="flex gap-2 mt-2">
-                            <span className={`badge ${
-                              invoice.status === "payée" ? "badge-success" : 
-                              invoice.status === "remboursée" ? "badge-error" : 
-                              invoice.status === "partiellement remboursée" ? "badge-warning" :
-                              invoice.status === "paid" ? "badge-success" : 
-                              "badge-warning"
-                            }`}>
+                            <span className={`badge ${getStatusBadgeClass(invoice.status)}`}>
                               {invoice.status}
                             </span>
                             {invoice.deliveryStatus && (
-                              <span className={`badge ${
-                                invoice.deliveryStatus === "en préparation" ? "badge-info" :
-                                invoice.deliveryStatus === "expédiée" ? "badge-primary" :
-                                invoice.deliveryStatus === "livrée" ? "badge-success" :
-                                invoice.deliveryStatus === "annulée" ? "badge-error" :
-                                "badge-ghost"
-                              }`}>
+                              <span className={`badge ${getDeliveryStatusBadgeClass(invoice.deliveryStatus)}`}>
                                 {invoice.deliveryStatus}
                               </span>
                             )}
@@ -622,7 +745,7 @@ export default function AdminUserDetailPage() {
                               const isSelected = itemMap?.has(idx) || false;
                               const refundQty = itemMap?.get(idx) || item.quantity;
                               return (
-                              <div key={idx} className={`flex items-center gap-4 p-4 rounded-lg ${isSelected ? 'bg-orange-50 border-2 border-orange-300' : 'bg-gray-50'}`}>
+                              <div key={`${invoice._id}-item-${idx}`} className={`flex items-center gap-4 p-4 rounded-lg ${isSelected ? 'bg-orange-50 border-2 border-orange-300' : 'bg-gray-50'}`}>
                                 {invoice.deliveryStatus === "en préparation" && invoice.status !== "remboursée" && (
                                   <input
                                     type="checkbox"
@@ -654,13 +777,14 @@ export default function AdminUserDetailPage() {
                                 </div>
                                 {isSelected && invoice.deliveryStatus === "en préparation" && (
                                   <div className="flex flex-col items-center gap-1">
-                                    <label className="text-xs text-gray-600">Qté à rembourser</label>
+                                    <label htmlFor={`refund-qty-${invoice._id}-${idx}`} className="text-xs text-gray-600">Qté à rembourser</label>
                                     <input
+                                      id={`refund-qty-${invoice._id}-${idx}`}
                                       type="number"
                                       min="1"
                                       max={item.quantity}
                                       value={refundQty}
-                                      onChange={(e) => updateRefundQuantity(invoice._id, idx, parseInt(e.target.value) || 1, item.quantity)}
+                                      onChange={(e) => updateRefundQuantity(invoice._id, idx, Number.parseInt(e.target.value) || 1, item.quantity)}
                                       className="input input-bordered input-sm w-20 text-center"
                                     />
                                   </div>

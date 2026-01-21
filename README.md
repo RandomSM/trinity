@@ -26,7 +26,6 @@ MONGODB_DB=eshop
 JWT_SECRET=votre_cle_secrete_jwt
 PAYPAL_CLIENT_ID=votre_client_id_paypal
 PAYPAL_CLIENT_SECRET=votre_client_secret_paypal
-PAYPAL_MODE=sandbox
 OPENFOODFACTS_API=https://world.openfoodfacts.org/api/v0
 PORT=4000
 NODE_ENV=development

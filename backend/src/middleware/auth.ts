@@ -20,7 +20,7 @@ export const authenticateToken = (
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader && authHeader.split(" ")[1]; // Bearer TOKEN
+  const token = authHeader?.split(" ")[1]; // Bearer TOKEN
 
   if (!token) {
     return res.status(401).json({ error: "Token d'authentification requis" });
@@ -34,7 +34,8 @@ export const authenticateToken = (
     };
     req.user = decoded;
     next();
-  } catch (err) {
+  } catch (err: unknown) {
+    console.error('JWT verification error:', err);
     return res.status(403).json({ error: "Token invalide ou expiré" });
   }
 };

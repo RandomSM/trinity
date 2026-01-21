@@ -4,7 +4,7 @@ import Footer from "@components/Footer";
 import Providers from "./providers";
 import "@styles/globals.css";
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+export default function RootLayout({ children }: { readonly children: ReactNode }) {
   return (
     <html lang="fr" suppressHydrationWarning>
       <body data-theme="light" suppressHydrationWarning>

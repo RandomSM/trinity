@@ -6,6 +6,7 @@
       "dom.iterable",
       "esnext"
     ],
+    "types": ["jest", "@testing-library/jest-dom"],
     "allowSyntheticDefaultImports": true,
     "allowJs": true,
     "skipLibCheck": true,
@@ -48,8 +49,10 @@
   },
   "include": [
     "src",
+    "src/**/__tests__/**/*.ts",
+    "src/**/__tests__/**/*.tsx",
     ".next/types/**/*.ts"
-, "../backend/src/routes/users", "../backend/src/routes/test", "../backend/src/routes/products", "../backend/src/routes/users.ts", "../backend/src/scripts/cleanProducts.ts", "../backend/src/scripts/importDump.ts", "../backend/src/lib/mongodb.ts"  ],
+  ],
   "exclude": [
     "node_modules"
   ]

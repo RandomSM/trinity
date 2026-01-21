@@ -32,7 +32,6 @@ jobs:
       JWT_SECRET: test_secret_key_for_ci
       PAYPAL_CLIENT_ID: test_client_id
       PAYPAL_CLIENT_SECRET: test_client_secret
-      PAYPAL_MODE: sandbox
     
     steps:
       - name: Checkout repository
@@ -55,11 +54,12 @@ jobs:
       
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
+        continue-on-error: true
         with:
           files: ./backend/coverage/cobertura-coverage.xml
           flags: backend
           name: backend-coverage
-          fail_ci_if_error: true
+          fail_ci_if_error: false
       
       - name: Archive coverage artifacts
         uses: actions/upload-artifact@v4
@@ -130,7 +130,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: trinity-mobile
-        run: npm ci
+        run: npm install --legacy-peer-deps
       
       - name: Run tests with coverage
         working-directory: trinity-mobile
@@ -173,3 +173,41 @@ jobs:
           echo "| Backend   | See Codecov |" >> $GITHUB_STEP_SUMMARY
           echo "| Frontend  | See Codecov |" >> $GITHUB_STEP_SUMMARY
           echo "| Mobile    | See Codecov |" >> $GITHUB_STEP_SUMMARY
+
+  # SonarCloud Analysis
+  sonarcloud:
+    name: SonarCloud Analysis
+    runs-on: ubuntu-latest
+    needs: [test-backend, test-frontend, test-mobile]
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Download backend coverage
+        uses: actions/download-artifact@v4
+        with:
+          name: backend-coverage
+          path: backend/coverage
+
+      - name: Download frontend coverage
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: frontend-coverage
+          path: trinity/coverage
+
+      - name: Download mobile coverage
+        uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: mobile-coverage
+          path: trinity-mobile/coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@master
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

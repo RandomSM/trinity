@@ -2,7 +2,7 @@ name: Mobile Deploy
 
 on:
   push:
-    branches: [main, develop]
+    branches: [main]
     paths:
       - 'trinity-mobile/**'
   pull_request:
@@ -10,11 +10,17 @@ on:
     paths:
       - 'trinity-mobile/**'
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Security Scanning", "Test & Coverage"]
+    types:
+      - completed
+    branches: [main]
 
 jobs:
   publish:
     name: Publish to Expo
     runs-on: ubuntu-latest
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && github.event.workflow_run == null) }}
     
     steps:
       - name: Checkout code
@@ -35,7 +41,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: trinity-mobile
-        run: npm ci --legacy-peer-deps
+        run: npm install --legacy-peer-deps
       
       - name: Publish update to Expo
         working-directory: trinity-mobile
@@ -44,7 +50,7 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && github.event.workflow_run == null)) }}
     
     steps:
       - name: Checkout code
@@ -65,7 +71,7 @@ jobs:
       
       - name: Install dependencies
         working-directory: trinity-mobile
-        run: npm ci --legacy-peer-deps
+        run: npm install --legacy-peer-deps
       
       - name: Build Android APK
         working-directory: trinity-mobile

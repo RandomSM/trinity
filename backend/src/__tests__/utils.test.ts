@@ -33,7 +33,7 @@ describe('Data Validation Helpers', () => {
   };
 
   const validatePrice = (price: number): boolean => {
-    return typeof price === 'number' && price >= 0 && isFinite(price);
+    return typeof price === 'number' && price >= 0 && Number.isFinite(price);
   };
 
   describe('Email Validation', () => {
@@ -60,7 +60,7 @@ describe('Data Validation Helpers', () => {
     it('should reject invalid prices', () => {
       expect(validatePrice(-10)).to.be.false;
       expect(validatePrice(Infinity)).to.be.false;
-      expect(validatePrice(NaN)).to.be.false;
+      expect(validatePrice(Number.NaN)).to.be.false;
     });
   });
 });
@@ -127,7 +127,7 @@ describe('Product Data Transformations', () => {
 
 describe('Currency Conversion', () => {
   const convertToEuro = (amount: number, rate: number): number => {
-    return parseFloat((amount / rate).toFixed(2));
+    return Number.parseFloat((amount / rate).toFixed(2));
   };
 
   it('should convert USD to EUR correctly', () => {

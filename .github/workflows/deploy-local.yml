@@ -2,13 +2,19 @@ name: Deploy to Local PC
 
 on:
   push:
-    branches: [main, dev]
+    branches: [main]
   workflow_dispatch:
+  workflow_run:
+    workflows: ["Security Scanning", "Test & Coverage"]
+    types:
+      - completed
+    branches: [main]
 
 jobs:
   deploy-local:
     name: Deploy to Local PC
     runs-on: self-hosted
+    if: ${{ github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || github.event_name == 'push' }}
     
     steps:
       - name: Checkout code
@@ -17,13 +23,13 @@ jobs:
       - name: Stop existing containers
         run: |
           cd C:\Users\samuel\Documents\rattrapage
-          docker-compose down
+          docker-compose -f docker-compose.prod.yml down
         continue-on-error: true
       
       - name: Pull latest images (if using registry)
         run: |
           cd C:\Users\samuel\Documents\rattrapage
-          docker-compose pull
+          docker-compose -f docker-compose.prod.yml pull
         continue-on-error: true
       
       - name: Build and start containers
@@ -33,7 +39,6 @@ jobs:
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
           PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
-          PAYPAL_MODE: sandbox
           OPENFOODFACTS_API: https://world.openfoodfacts.org/api/v0
           NEXT_PUBLIC_API_URL: http://localhost:4000
           NEXT_PUBLIC_PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
@@ -41,7 +46,7 @@ jobs:
           NODE_ENV: production
         run: |
           cd C:\Users\samuel\Documents\rattrapage
-          docker-compose up -d --build
+          docker-compose -f docker-compose.prod.yml up -d --build
       
       - name: Clean up old images
         run: docker image prune -f

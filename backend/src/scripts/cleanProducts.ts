@@ -46,4 +46,4 @@ async function cleanProducts() {
   }
 }
 
-cleanProducts();
+await cleanProducts();

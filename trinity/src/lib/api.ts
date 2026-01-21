@@ -30,10 +30,10 @@ apiClient.interceptors.response.use(
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       
-      if (typeof window !== 'undefined' && 
-          !window.location.pathname.includes('/login') && 
-          !window.location.pathname.includes('/register')) {
-        window.location.href = '/login?expired=true';
+      if (typeof globalThis.window !== 'undefined' && 
+          !globalThis.window.location.pathname.includes('/login') && 
+          !globalThis.window.location.pathname.includes('/register')) {
+        globalThis.window.location.href = '/login?expired=true';
       }
     }
     return Promise.reject(error);
@@ -66,7 +66,7 @@ export const authAPI = {
   logout: () => {
     localStorage.removeItem('token');
     localStorage.removeItem('user');
-    window.location.href = '/login';
+    globalThis.window.location.href = '/login';
   },
 
   getCurrentUser: () => {

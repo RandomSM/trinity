@@ -7,8 +7,8 @@ const routeProducts = Router();
 
 routeProducts.get("/", async (req, res) => {
   try {
-    const page = parseInt(req.query.page as string) || 1;
-    const limit = parseInt(req.query.limit as string) || 20;
+    const page = Number.parseInt(req.query.page as string) || 1;
+    const limit = Number.parseInt(req.query.limit as string) || 20;
     const includeTotal = req.query.includeTotal === "true" || page === 1;
     const db = await connectDB("eshop");
     

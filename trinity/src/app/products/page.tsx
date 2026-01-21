@@ -27,8 +27,8 @@ export default function ProductsPage() {
     console.log("goToPage ->", target);
     dispatch(fetchProductsPage({ page: target, category }));
     // optional: scroll top to show user the grid
-    if (typeof window !== "undefined") {
-      window.scrollTo({ top: 0, behavior: "smooth" });
+    if (typeof globalThis.window !== "undefined") {
+      globalThis.window.scrollTo({ top: 0, behavior: "smooth" });
     }
   };
 

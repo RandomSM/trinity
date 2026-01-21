@@ -34,20 +34,15 @@ interface KPIData {
 
 export default function HomePage() {
   const [trendingProducts, setTrendingProducts] = useState<any[]>([]);
-  const [kpiData, setKpiData] = useState<KPIData | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch trending products and KPIs
-        const [trending, kpi] = await Promise.all([
-          reportsAPI.getTrendingProducts(),
-          reportsAPI.getLatest()
-        ]);
+        const trending = await reportsAPI.getTrendingProducts();
         
         setTrendingProducts(trending.slice(0, 12));
-        setKpiData(kpi);
       } catch (error) {
         console.error("Error loading homepage data:", error);
       } finally {

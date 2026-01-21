@@ -83,7 +83,7 @@ describe('User Authentication Helpers', () => {
 
 describe('Price Calculations', () => {
   const calculateTotal = (items: any[]) => {
-    return parseFloat(
+    return Number.parseFloat(
       items.reduce((sum, item) => sum + (item.price * item.quantity), 0).toFixed(2)
     );
   };
@@ -91,7 +91,7 @@ describe('Price Calculations', () => {
   it('should calculate cart total correctly', () => {
     const items = [
       { price: 4.99, quantity: 2 },
-      { price: 10.50, quantity: 1 },
+      { price: 10.5, quantity: 1 },
       { price: 3.25, quantity: 3 }
     ];
     const total = calculateTotal(items);

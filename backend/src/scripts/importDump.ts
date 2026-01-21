@@ -1,5 +1,4 @@
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
 import { connectDB } from "../lib/mongodb";
 
 /**
@@ -15,7 +14,7 @@ async function importDump() {
 
     // Vérifie si le fichier existe
     // Modifiez ce chemin pour pointer vers votre disque réseau
-    const filePath = "\\TRUENAS\Video_telephone\openfoodfacts-products.jsonl"; // Exemple: \\\\NAS\\data\\products.json
+    const filePath = "\\\\TRUENAS\\Video_telephone\\openfoodfacts-products.jsonl"; // Exemple: \\\\NAS\\data\\products.json
     // Ou utilisez le chemin par défaut dans le projet:
     // const filePath = path.join(process.cwd(), "products.json");
     
@@ -79,4 +78,4 @@ async function importDump() {
   }
 }
 
-importDump();
+await importDump();
