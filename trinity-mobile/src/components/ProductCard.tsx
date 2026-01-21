@@ -98,7 +98,7 @@ export default React.memo(function ProductCard({ product }: ProductCardProps) {
             <View style={styles.stockRow}>
               <Text style={styles.stockLabel}>Stock</Text>
               <Text style={[styles.stockValue, { color: stock > 10 ? '#52B46B' : '#ff6b6b' }]}>
-                {stock} unites
+                {stock} unités
               </Text>
             </View>
             <View style={styles.progressBarContainer}>
@@ -122,7 +122,7 @@ export default React.memo(function ProductCard({ product }: ProductCardProps) {
             disabled={stock === 0}
           >
             <Text style={styles.addButtonText}>
-              {stock > 0 ? 'Ajouter' : 'Epuise'}
+              {stock > 0 ? 'Ajouter' : 'Épuisé'}
             </Text>
           </TouchableOpacity>
         </View>
