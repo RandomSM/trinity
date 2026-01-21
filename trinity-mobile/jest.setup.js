@@ -22,12 +22,6 @@ jest.mock('expo-camera', () => ({
   ]),
 }));
 
-jest.mock('expo-barcode-scanner', () => ({
-  BarCodeScanner: {
-    requestPermissionsAsync: jest.fn(() => Promise.resolve({ status: 'granted' })),
-  },
-}));
-
 // Mock expo-linking
 jest.mock('expo-linking', () => ({
   createURL: jest.fn((path) => `exp://127.0.0.1:8081/${path}`),

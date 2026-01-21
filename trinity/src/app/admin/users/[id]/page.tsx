@@ -32,6 +32,26 @@ interface UserDetail {
   isAdmin: boolean;
 }
 
+interface InvoiceItem {
+  name: string;
+  barcode: string;
+  productId: string;
+  price: number;
+  quantity: number;
+}
+
+interface Shipping {
+  name?: {
+    full_name?: string;
+  };
+  address?: {
+    address_line_1?: string;
+    admin_area_2?: string;
+    postal_code?: string;
+    country_code?: string;
+  };
+}
+
 interface Invoice {
   _id: string;
   userId: string;
@@ -40,8 +60,8 @@ interface Invoice {
   deliveryStatus?: string;
   paypalCaptureId?: string;
   createdAt: string;
-  items: any[];
-  shipping?: any;
+  items: InvoiceItem[];
+  shipping?: Shipping;
 }
 
 export default function AdminUserDetailPage() {
@@ -56,7 +76,6 @@ export default function AdminUserDetailPage() {
   const [loading, setLoading] = useState(true);
   const [checkingAuth, setCheckingAuth] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [error, setError] = useState("");
   const [expandedInvoices, setExpandedInvoices] = useState<Set<string>>(new Set());
   const [selectedItems, setSelectedItems] = useState<Map<string, Map<number, number>>>(new Map()); // invoiceId -> Map(itemIndex -> quantity)
   const [formData, setFormData] = useState({
@@ -75,13 +94,7 @@ export default function AdminUserDetailPage() {
 
   useEffect(() => {
     const checkAuth = async () => {
-      if (user) {
-        if (!user.isAdmin) {
-          router.push("/");
-          return;
-        }
-        setCheckingAuth(false);
-      } else {
+      if (!user) {
         if (!authAPI.isAuthenticated()) {
           router.push("/login");
           return;
@@ -109,7 +122,14 @@ export default function AdminUserDetailPage() {
           console.error(err);
           router.push("/login");
         }
+        return;
       }
+      
+      if (!user.isAdmin) {
+        router.push("/");
+        return;
+      }
+      setCheckingAuth(false);
     };
 
     checkAuth();
@@ -142,10 +162,10 @@ export default function AdminUserDetailPage() {
         
         console.log("Factures reçues:", userInvoices);
         setInvoices(userInvoices);
-      } catch (err: any) {
+      } catch (err) {
         console.error("Erreur lors du chargement:", err);
-        const errorMessage = err.response?.data?.error || "Utilisateur non trouvé";
-        setError(errorMessage);
+        const errorMessage = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || "Utilisateur non trouvé";
+        alert(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -156,15 +176,13 @@ export default function AdminUserDetailPage() {
 
   const handleSave = async () => {
     try {
-      setError("");
       await usersAPI.adminEdit(userId, formData);
       setUserDetail({ _id: userId, ...formData });
       setEditing(false);
       alert("Utilisateur mis à jour avec succès !");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const errorMessage = err.response?.data?.error || "Impossible de mettre à jour l'utilisateur";
-      setError(errorMessage);
+      const errorMessage = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || "Impossible de mettre à jour l'utilisateur";
       alert(errorMessage);
     }
   };
@@ -173,14 +191,12 @@ export default function AdminUserDetailPage() {
     if (!confirm("Voulez-vous vraiment supprimer cet utilisateur ?")) return;
 
     try {
-      setError("");
       await usersAPI.adminDelete(userId);
       alert("Utilisateur supprimé avec succès !");
       router.push("/admin");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const errorMessage = err.response?.data?.error || "Impossible de supprimer l'utilisateur";
-      setError(errorMessage);
+      const errorMessage = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || "Impossible de supprimer l'utilisateur";
       alert(errorMessage);
     }
   };
@@ -189,14 +205,12 @@ export default function AdminUserDetailPage() {
     if (!confirm("Voulez-vous vraiment supprimer cette commande ?")) return;
 
     try {
-      setError("");
       await invoicesAPI.delete(invoiceId);
       setInvoices(invoices.filter((inv) => inv._id !== invoiceId));
       alert("Commande supprimée avec succès !");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const errorMessage = err.response?.data?.error || "Impossible de supprimer la commande";
-      setError(errorMessage);
+      const errorMessage = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || "Impossible de supprimer la commande";
       alert(errorMessage);
     }
   };
@@ -241,7 +255,7 @@ export default function AdminUserDetailPage() {
     setSelectedItems(newSelected);
   };
 
-  const selectAllItems = (invoiceId: string, items: any[]) => {
+  const selectAllItems = (invoiceId: string, items: InvoiceItem[]) => {
     const newSelected = new Map(selectedItems);
     const itemMap = new Map<number, number>();
     items.forEach((item, idx) => {
@@ -276,13 +290,12 @@ export default function AdminUserDetailPage() {
     const invoice = invoices.find(inv => inv._id === invoiceId);
     
     if (invoice?.deliveryStatus !== "en préparation") {
-      alert("Le remboursement n'est possible que pour les commandes en préparation (produits alimentaires)");
+      alert("Le remboursement n’est possible que pour les commandes en préparation (produits alimentaires)");
       return;
     }
 
     const selected = selectedItems.get(invoiceId);
-    let itemsToRefund: Array<{index: number, quantity: number}> = [];
-    let isFullRefund = false;
+    const itemsToRefund: Array<{index: number, quantity: number}> = [];
 
     // Prepare items to refund
     if (selected && selected.size > 0 && invoice) {
@@ -293,14 +306,6 @@ export default function AdminUserDetailPage() {
           itemsToRefund.push({ index: idx, quantity: qty });
         }
       });
-      
-      // Check if it's a full refund (all items with full quantities)
-      isFullRefund = invoice.items.every((item: any, idx: number) => {
-        const refundQty = selected.get(idx);
-        return refundQty === item.quantity;
-      }) && selected.size === invoice.items.length;
-    } else {
-      isFullRefund = true;
     }
 
     const refundMessage = itemsToRefund.length > 0
@@ -310,7 +315,6 @@ export default function AdminUserDetailPage() {
     if (!confirm(refundMessage)) return;
 
     try {
-      setError("");
       const response = await invoicesAPI.refund(invoiceId, itemsToRefund.length > 0 ? itemsToRefund : undefined);
 
       // Reload invoices from server to get updated data
@@ -323,17 +327,15 @@ export default function AdminUserDetailPage() {
       // Show success message with actual refund amount from backend
       const refundAmountMsg = response.refundAmount ? ` (${response.refundAmount}€)` : '';
       alert(`${response.message || "Remboursement effectué avec succès !"}${refundAmountMsg}`);
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const errorMessage = err.response?.data?.error || "Impossible d'effectuer le remboursement";
-      setError(errorMessage);
+      const errorMessage = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || "Impossible d'effectuer le remboursement";
       alert(errorMessage);
     }
   };
 
   const updateDeliveryStatus = async (invoiceId: string, newStatus: string) => {
     try {
-      setError("");
       await invoicesAPI.update(invoiceId, { deliveryStatus: newStatus });
 
       setInvoices(invoices.map(inv => 
@@ -341,10 +343,9 @@ export default function AdminUserDetailPage() {
       ));
       
       alert("Statut de livraison mis à jour !");
-    } catch (err: any) {
+    } catch (err) {
       console.error(err);
-      const errorMessage = err.response?.data?.error || "Impossible de mettre à jour le statut";
-      setError(errorMessage);
+      const errorMessage = (err as {response?: {data?: {error?: string}}})?.response?.data?.error || "Impossible de mettre à jour le statut";
       alert(errorMessage);
     }
   };
@@ -374,7 +375,7 @@ export default function AdminUserDetailPage() {
 
         <div className="bg-white rounded-3xl shadow-2xl overflow-hidden mb-8">
           <div className="bg-gradient-to-r from-[#FF6F00] to-[#FF8F00] px-8 py-6">
-            <h1 className="text-3xl font-bold text-white">Détails de l'utilisateur</h1>
+            <h1 className="text-3xl font-bold text-white">Détails de l&apos;utilisateur</h1>
           </div>
 
           <div className="p-8">
@@ -548,119 +549,7 @@ export default function AdminUserDetailPage() {
                     onClick={handleDelete}
                     className="btn bg-red-500 hover:bg-red-600 text-white border-none rounded-full px-8 h-auto py-3"
                   >
-                    Supprimer l'utilisateur
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-6">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="form-control">
-                    <label className="label"><span className="label-text font-semibold">Email</span></label>
-                    <input
-                      type="email"
-                      className="input input-bordered rounded-full"
-                      value={formData.email}
-                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-control">
-                    <label className="label"><span className="label-text font-semibold">Prénom</span></label>
-                    <input
-                      type="text"
-                      className="input input-bordered rounded-full"
-                      value={formData.firstName}
-                      onChange={(e) => setFormData({ ...formData, firstName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-control">
-                    <label className="label"><span className="label-text font-semibold">Nom</span></label>
-                    <input
-                      type="text"
-                      className="input input-bordered rounded-full"
-                      value={formData.lastName}
-                      onChange={(e) => setFormData({ ...formData, lastName: e.target.value })}
-                    />
-                  </div>
-                  <div className="form-control">
-                    <label className="label"><span className="label-text font-semibold">Téléphone</span></label>
-                    <input
-                      type="tel"
-                      className="input input-bordered rounded-full"
-                      value={formData.phone}
-                      onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-                    />
-                  </div>
-                </div>
-
-                <div className="form-control">
-                  <label className="label cursor-pointer justify-start gap-4">
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-primary"
-                      checked={formData.isAdmin}
-                      onChange={(e) => setFormData({ ...formData, isAdmin: e.target.checked })}
-                    />
-                    <span className="label-text font-semibold">Administrateur</span>
-                  </label>
-                </div>
-
-                <div className="mt-8">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">Adresse de facturation</h3>
-                  <div className="space-y-4">
-                    <div className="form-control">
-                      <label className="label"><span className="label-text font-semibold">Adresse</span></label>
-                      <input
-                        type="text"
-                        className="input input-bordered rounded-full"
-                        value={formData.billing.address}
-                        onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, address: e.target.value } })}
-                      />
-                    </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold">Code postal</span></label>
-                        <input
-                          type="text"
-                          className="input input-bordered rounded-full"
-                          value={formData.billing.zipCode}
-                          onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, zipCode: e.target.value } })}
-                        />
-                      </div>
-                      <div className="form-control">
-                        <label className="label"><span className="label-text font-semibold">Ville</span></label>
-                        <input
-                          type="text"
-                          className="input input-bordered rounded-full"
-                          value={formData.billing.city}
-                          onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, city: e.target.value } })}
-                        />
-                      </div>
-                    </div>
-                    <div className="form-control">
-                      <label className="label"><span className="label-text font-semibold">Pays</span></label>
-                      <input
-                        type="text"
-                        className="input input-bordered rounded-full"
-                        value={formData.billing.country}
-                        onChange={(e) => setFormData({ ...formData, billing: { ...formData.billing, country: e.target.value } })}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex gap-4 mt-8">
-                  <button
-                    onClick={handleSave}
-                    className="btn bg-[#52B46B] hover:bg-[#449958] text-white border-none rounded-full px-8 flex-1"
-                  >
-                    Sauvegarder
-                  </button>
-                  <button
-                    onClick={() => setEditing(false)}
-                    className="btn btn-outline rounded-full px-8"
-                  >
-                    Annuler
+                    Supprimer l&apos;utilisateur
                   </button>
                 </div>
               </div>
@@ -855,7 +744,7 @@ export default function AdminUserDetailPage() {
                             )}
                             {invoice.deliveryStatus !== "en préparation" && invoice.status !== "remboursée" && (
                               <p className="text-sm text-gray-500 italic">
-                                Le remboursement n'est plus possible (produits alimentaires déjà expédiés ou livrés)
+                                Le remboursement n&apos;est plus possible (produits alimentaires déjà expédiés ou livrés)
                               </p>
                             )}
                           </div>
