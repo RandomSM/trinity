@@ -1,10 +1,6 @@
 name: Mobile Deploy
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - 'trinity-mobile/**'
   pull_request:
     branches: [main, develop]
     paths:
@@ -20,7 +16,7 @@ jobs:
   publish:
     name: Publish to Expo
     runs-on: ubuntu-latest
-    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && github.event.workflow_run == null) }}
+    if: ${{ github.event_name == 'workflow_dispatch' || github.event_name == 'pull_request' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') }}
     
     steps:
       - name: Checkout code
@@ -50,7 +46,7 @@ jobs:
   build:
     name: Build APK
     runs-on: ubuntu-latest
-    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success') || (github.event_name == 'push' && github.event.workflow_run == null)) }}
+    if: ${{ github.ref == 'refs/heads/main' && (github.event_name == 'workflow_dispatch' || (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success')) }}
     
     steps:
       - name: Checkout code

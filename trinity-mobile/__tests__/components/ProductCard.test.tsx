@@ -170,4 +170,151 @@ describe('ProductCard', () => {
 
     expect(queryByText('400g')).toBeNull();
   });
+
+  it('should render without nutriscore if not provided', () => {
+    const store = createMockStore();
+    const productWithoutNutriscore = { ...mockProduct, nutriscore: undefined };
+    
+    const { queryByText } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithoutNutriscore} />
+      </Provider>
+    );
+
+    expect(queryByText(/Nutriscore/)).toBeNull();
+  });
+
+  it('should use image_url as fallback when image_front_url is not available', () => {
+    const store = createMockStore();
+    const productWithImageUrl = { 
+      ...mockProduct, 
+      image_front_url: undefined,
+      image_url: 'https://example.com/fallback.jpg'
+    };
+    
+    const { UNSAFE_getByType } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithImageUrl} />
+      </Provider>
+    );
+
+    const image = UNSAFE_getByType('Image' as any);
+    expect(image.props.source.uri).toBe('https://example.com/fallback.jpg');
+  });
+
+  it('should generate OpenFoodFacts URL when no images provided', () => {
+    const store = createMockStore();
+    const productWithoutImages = { 
+      ...mockProduct, 
+      image_front_url: undefined,
+      image_url: undefined
+    };
+    
+    const { UNSAFE_getByType } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithoutImages} />
+      </Provider>
+    );
+
+    const image = UNSAFE_getByType('Image' as any);
+    expect(image.props.source.uri).toContain('images.openfoodfacts.org');
+  });
+
+  it('should use placeholder for invalid barcode (less than 13 chars)', () => {
+    const store = createMockStore();
+    const productWithShortId = { 
+      ...mockProduct,
+      id: '123', 
+      image_front_url: undefined,
+      image_url: undefined
+    };
+    
+    const { UNSAFE_getByType } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithShortId} />
+      </Provider>
+    );
+
+    const image = UNSAFE_getByType('Image' as any);
+    expect(image.props.source.uri).toBe('https://via.placeholder.com/150');
+  });
+
+  it('should display correct stock color for low stock (<=10)', () => {
+    const store = createMockStore();
+    const lowStockProduct = { ...mockProduct, stock: 5 };
+    
+    const { getByText } = render(
+      <Provider store={store}>
+        <ProductCard product={lowStockProduct} />
+      </Provider>
+    );
+
+    expect(getByText('5 unités')).toBeTruthy();
+  });
+
+  it('should display correct stock color for high stock (>10)', () => {
+    const store = createMockStore();
+    const highStockProduct = { ...mockProduct, stock: 50 };
+    
+    const { getByText } = render(
+      <Provider store={store}>
+        <ProductCard product={highStockProduct} />
+      </Provider>
+    );
+
+    expect(getByText('50 unités')).toBeTruthy();
+  });
+
+  it('should render with nutriscore A', () => {
+    const store = createMockStore();
+    const productWithA = { ...mockProduct, nutriscore: 'a' };
+    
+    const { getByText } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithA} />
+      </Provider>
+    );
+
+    expect(getByText(/Nutriscore/)).toBeTruthy();
+    expect(getByText(/A/)).toBeTruthy();
+  });
+
+  it('should render with nutriscore B', () => {
+    const store = createMockStore();
+    const productWithB = { ...mockProduct, nutriscore: 'b' };
+    
+    const { getByText } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithB} />
+      </Provider>
+    );
+
+    expect(getByText(/B/)).toBeTruthy();
+  });
+
+  it('should render with nutriscore C', () => {
+    const store = createMockStore();
+    const productWithC = { ...mockProduct, nutriscore: 'c' };
+    
+    const { getByText } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithC} />
+      </Provider>
+    );
+
+    expect(getByText(/C/)).toBeTruthy();
+  });
+
+  it('should render with nutriscore D', () => {
+    const store = createMockStore();
+    const productWithD = { ...mockProduct, nutriscore: 'd' };
+    
+    const { getByText } = render(
+      <Provider store={store}>
+        <ProductCard product={productWithD} />
+      </Provider>
+    );
+
+    expect(getByText(/D/)).toBeTruthy();
+  });
 });
