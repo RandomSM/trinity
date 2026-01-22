@@ -60,6 +60,13 @@ jobs:
           cd C:\Users\samuel\Documents\rattrapage
           docker-compose -f docker-compose.prod.yml up -d --build
       
+      - name: Cleanup sensitive files
+        if: always()
+        run: |
+          cd C:\Users\samuel\Documents\rattrapage
+          if (Test-Path .env) { Remove-Item .env -Force }
+          if (Test-Path backend\.env.production) { Remove-Item backend\.env.production -Force }
+      
       - name: Clean up old images
         run: docker image prune -f
         continue-on-error: true
