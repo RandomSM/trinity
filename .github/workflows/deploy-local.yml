@@ -42,11 +42,40 @@ jobs:
           docker-compose -f docker-compose.prod.yml down
         continue-on-error: true
       
-      - name: Pull latest images (if using registry)
+      - name: Pull latest images
         run: |
           cd C:\Users\samuel\Documents\rattrapage
           docker-compose -f docker-compose.prod.yml pull
         continue-on-error: true
+      
+      - name: Debug - Check secrets availability
+        env:
+          MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
+          JWT_SECRET: ${{ secrets.JWT_SECRET }}
+          PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
+        run: |
+          Write-Host "=== Checking Secrets Availability ==="
+          if ([string]::IsNullOrEmpty($env:MONGO_PASSWORD)) { 
+            Write-Host "❌ MONGO_PASSWORD is EMPTY or NULL" 
+          } else { 
+            Write-Host "✅ MONGO_PASSWORD is set (length: $($env:MONGO_PASSWORD.Length) chars, starts with: $($env:MONGO_PASSWORD.Substring(0, [Math]::Min(3, $env:MONGO_PASSWORD.Length)))...)" 
+          }
+          if ([string]::IsNullOrEmpty($env:JWT_SECRET)) { 
+            Write-Host "❌ JWT_SECRET is EMPTY or NULL" 
+          } else { 
+            Write-Host "✅ JWT_SECRET is set (length: $($env:JWT_SECRET.Length) chars)" 
+          }
+          if ([string]::IsNullOrEmpty($env:PAYPAL_CLIENT_ID)) { 
+            Write-Host "❌ PAYPAL_CLIENT_ID is EMPTY or NULL" 
+          } else { 
+            Write-Host "✅ PAYPAL_CLIENT_ID is set (length: $($env:PAYPAL_CLIENT_ID.Length) chars)" 
+          }
+          if ([string]::IsNullOrEmpty($env:PAYPAL_CLIENT_SECRET)) { 
+            Write-Host "❌ PAYPAL_CLIENT_SECRET is EMPTY or NULL" 
+          } else { 
+            Write-Host "✅ PAYPAL_CLIENT_SECRET is set (length: $($env:PAYPAL_CLIENT_SECRET.Length) chars)" 
+          }
       
       - name: Build and start containers
         env:
@@ -58,13 +87,29 @@ jobs:
           API_URL: http://localhost:4000
         run: |
           cd C:\Users\samuel\Documents\rattrapage
+          Write-Host "=== Setting environment variables for docker-compose ==="
           $env:MONGO_PASSWORD = "$env:MONGO_PASSWORD"
           $env:JWT_SECRET = "$env:JWT_SECRET"
           $env:PAYPAL_CLIENT_ID = "$env:PAYPAL_CLIENT_ID"
           $env:PAYPAL_CLIENT_SECRET = "$env:PAYPAL_CLIENT_SECRET"
           $env:PAYPAL_MODE = "$env:PAYPAL_MODE"
           $env:API_URL = "$env:API_URL"
+          
+          Write-Host "=== Running docker-compose config to verify variable substitution ==="
+          docker-compose -f docker-compose.prod.yml config | Select-String -Pattern "MONGO_INITDB_ROOT_PASSWORD" -Context 2,2
+          
+          Write-Host "=== Starting containers ==="
           docker-compose -f docker-compose.prod.yml up -d --build
+      
+      - name: Wait for containers to start
+        run: |
+          Write-Host "Waiting 10 seconds for containers to initialize..."
+          Start-Sleep -Seconds 10
+      
+      - name: Check MongoDB container logs
+        run: |
+          Write-Host "=== MongoDB Container Logs (last 30 lines) ==="
+          docker logs trinity_mongo_prod --tail 30
       
       - name: Cleanup sensitive files
         if: always()
