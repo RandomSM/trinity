@@ -64,7 +64,7 @@ Remplacer `votre-ip-locale` par votre adresse IP locale pour tester sur un appar
 
 ### Mode developpement
 
-```powershell
+```
 docker-compose up -d
 ```
 
@@ -117,7 +117,7 @@ Le frontend sera disponible sur http://localhost:3000
 
 ### Application Mobile
 
-```powershell
+```
 cd trinity-mobile
 npm install
 npm start
@@ -158,7 +158,7 @@ Avec Docker :
 - Host : localhost
 - Port : 27017
 - Username : root
-- Password : 92110
+- Password : ****
 - Database : eshop
 
 ### Interface MongoDB Express
