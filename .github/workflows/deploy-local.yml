@@ -18,6 +18,24 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
       
+      - name: Create backend .env.production
+        run: |
+          cd C:\Users\samuel\Documents\rattrapage\backend
+          @"
+          MONGO_PASSWORD=${{ secrets.MONGO_PASSWORD }}
+          JWT_SECRET=${{ secrets.JWT_SECRET }}
+          PAYPAL_CLIENT_ID=${{ secrets.PAYPAL_CLIENT_ID }}
+          PAYPAL_CLIENT_SECRET=${{ secrets.PAYPAL_CLIENT_SECRET }}
+          PAYPAL_MODE=sandbox
+          "@ | Out-File -FilePath .env.production -Encoding UTF8
+      
+      - name: Create frontend .env.production
+        run: |
+          cd C:\Users\samuel\Documents\rattrapage\trinity
+          @"
+          NEXT_PUBLIC_API_URL=http://localhost:4000
+          "@ | Out-File -FilePath .env.production -Encoding UTF8
+      
       - name: Stop existing containers
         run: |
           cd C:\Users\samuel\Documents\rattrapage
