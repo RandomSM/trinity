@@ -77,26 +77,30 @@ jobs:
             Write-Host "✅ PAYPAL_CLIENT_SECRET is set (length: $($env:PAYPAL_CLIENT_SECRET.Length) chars)" 
           }
       
-      - name: Build and start containers
+      - name: Create root .env file for docker-compose
         env:
           MONGO_PASSWORD: ${{ secrets.MONGO_PASSWORD }}
           JWT_SECRET: ${{ secrets.JWT_SECRET }}
           PAYPAL_CLIENT_ID: ${{ secrets.PAYPAL_CLIENT_ID }}
           PAYPAL_CLIENT_SECRET: ${{ secrets.PAYPAL_CLIENT_SECRET }}
-          PAYPAL_MODE: sandbox
-          API_URL: http://localhost:4000
         run: |
           cd C:\Users\samuel\Documents\rattrapage
-          Write-Host "=== Setting environment variables for docker-compose ==="
-          $env:MONGO_PASSWORD = "$env:MONGO_PASSWORD"
-          $env:JWT_SECRET = "$env:JWT_SECRET"
-          $env:PAYPAL_CLIENT_ID = "$env:PAYPAL_CLIENT_ID"
-          $env:PAYPAL_CLIENT_SECRET = "$env:PAYPAL_CLIENT_SECRET"
-          $env:PAYPAL_MODE = "$env:PAYPAL_MODE"
-          $env:API_URL = "$env:API_URL"
-          
+          Write-Host "=== Creating .env file for docker-compose ==="
+          @"
+          MONGO_PASSWORD=$env:MONGO_PASSWORD
+          JWT_SECRET=$env:JWT_SECRET
+          PAYPAL_CLIENT_ID=$env:PAYPAL_CLIENT_ID
+          PAYPAL_CLIENT_SECRET=$env:PAYPAL_CLIENT_SECRET
+          PAYPAL_MODE=sandbox
+          API_URL=http://localhost:4000
+          "@ | Out-File -FilePath .env -Encoding UTF8
+          Write-Host "✅ .env file created"
+      
+      - name: Build and start containers
+        run: |
+          cd C:\Users\samuel\Documents\rattrapage
           Write-Host "=== Running docker-compose config to verify variable substitution ==="
-          docker-compose -f docker-compose.prod.yml config | Select-String -Pattern "MONGO_INITDB_ROOT_PASSWORD" -Context 2,2
+          docker-compose -f docker-compose.prod.yml config | Select-String -Pattern "MONGO_INITDB_ROOT_PASSWORD|MONGO_PASSWORD" -Context 1,1
           
           Write-Host "=== Starting containers ==="
           docker-compose -f docker-compose.prod.yml up -d --build
