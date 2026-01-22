@@ -1,0 +1,216 @@
+@startuml Mobile Classes
+
+' Redux Store
+class RootState {
+  - cart: CartState
+  - user: UserState
+  - products: ProductsState
+  + getState(): RootState
+  + dispatch(action: Action): void
+}
+
+class CartState {
+  - items: CartItem[]
+  + addItem(product: Product, quantity: number): void
+  + removeItem(productId: string): void
+  + updateQuantity(productId: string, quantity: number): void
+  + clearCart(): void
+  + getTotalItems(): number
+  + getTotalPrice(): number
+}
+
+class UserState {
+  - user: User | null
+  - token: string | null
+  + setUser(user: User, token: string): void
+  + logout(): void
+  + isAuthenticated(): boolean
+}
+
+class ProductsState {
+  - products: Product[]
+  - loading: boolean
+  - error: string | null
+  + fetchProducts(): Promise<void>
+  + addProduct(product: Product): void
+}
+
+' Screens
+class HomeScreen {
+  + navigation: Navigation
+  + render(): JSX.Element
+  + navigateToScanner(): void
+  + navigateToProducts(): void
+  + navigateToCart(): void
+}
+
+class LoginScreen {
+  - email: string
+  - password: string
+  - loading: boolean
+  - error: string
+  + render(): JSX.Element
+  + handleLogin(): Promise<void>
+  + navigateToRegister(): void
+}
+
+class ScannerScreen {
+  - hasPermission: boolean
+  - scanned: boolean
+  - scannedData: string | null
+  + render(): JSX.Element
+  + requestCameraPermission(): Promise<void>
+  + handleBarCodeScanned(data: string): void
+  + fetchProductByBarcode(barcode: string): Promise<void>
+}
+
+class ProductsScreen {
+  - products: Product[]
+  - loading: boolean
+  - refreshing: boolean
+  + render(): JSX.Element
+  + handleRefresh(): Promise<void>
+  + handleProductPress(product: Product): void
+}
+
+class ProductDetailScreen {
+  + route: { params: { product: Product } }
+  - quantity: number
+  + render(): JSX.Element
+  + handleAddToCart(): void
+  + incrementQuantity(): void
+  + decrementQuantity(): void
+}
+
+class CartScreen {
+  - cartItems: CartItem[]
+  - total: number
+  + render(): JSX.Element
+  + handleCheckout(): void
+  + handleRemoveItem(productId: string): void
+  + handleUpdateQuantity(productId: string, quantity: number): void
+}
+
+class ProfileScreen {
+  - user: User
+  - invoices: Invoice[]
+  - loading: boolean
+  + render(): JSX.Element
+  + handleLogout(): void
+  + fetchInvoices(): Promise<void>
+}
+
+' Components
+class ProductCard {
+  + product: Product
+  + onPress: (product: Product) => void
+  + render(): JSX.Element
+}
+
+class CartItem {
+  + item: CartItem
+  + onRemove: (productId: string) => void
+  + onUpdateQuantity: (productId: string, quantity: number) => void
+  + render(): JSX.Element
+}
+
+' Navigation
+class RootNavigator {
+  + Stack: StackNavigator
+  + render(): JSX.Element
+  + isAuthenticated(): boolean
+}
+
+class AuthStack {
+  + Login: LoginScreen
+  + Register: RegisterScreen
+  + render(): JSX.Element
+}
+
+class MainStack {
+  + Home: HomeScreen
+  + Scanner: ScannerScreen
+  + Products: ProductsScreen
+  + ProductDetail: ProductDetailScreen
+  + Cart: CartScreen
+  + Profile: ProfileScreen
+  + render(): JSX.Element
+}
+
+' API Clients
+class APIClient {
+  - baseURL: string
+  - token: string | null
+  + setToken(token: string): void
+  + request(method: string, url: string, data?: any): Promise<any>
+}
+
+class AuthAPI {
+  + login(email: string, password: string): Promise<LoginResponse>
+  + register(userData: RegisterData): Promise<void>
+}
+
+class ProductsAPI {
+  + getAll(): Promise<Product[]>
+  + getByBarcode(barcode: string): Promise<Product>
+}
+
+class InvoicesAPI {
+  + getByUserId(userId: string): Promise<Invoice[]>
+  + create(orderData: CreateOrderData): Promise<Invoice>
+}
+
+class PayPalAPI {
+  + createOrder(items: CartItem[]): Promise<string>
+  + captureOrder(orderId: string): Promise<CaptureResponse>
+}
+
+' Services
+class CameraService {
+  + requestPermission(): Promise<boolean>
+  + checkPermission(): Promise<boolean>
+}
+
+class StorageService {
+  + setItem(key: string, value: any): Promise<void>
+  + getItem(key: string): Promise<any>
+  + removeItem(key: string): Promise<void>
+  + clear(): Promise<void>
+}
+
+class BarcodeService {
+  + scan(data: string): string
+  + validate(barcode: string): boolean
+}
+
+' Relations
+RootState "1" *-- "1" CartState
+RootState "1" *-- "1" UserState
+RootState "1" *-- "1" ProductsState
+
+RootNavigator "1" *-- "1" AuthStack
+RootNavigator "1" *-- "1" MainStack
+
+AuthStack ..> LoginScreen : contains
+MainStack ..> HomeScreen : contains
+MainStack ..> ScannerScreen : contains
+MainStack ..> ProductsScreen : contains
+MainStack ..> ProductDetailScreen : contains
+MainStack ..> CartScreen : contains
+MainStack ..> ProfileScreen : contains
+
+HomeScreen ..> RootState : reads
+LoginScreen ..> RootState : dispatches
+ScannerScreen ..> CameraService : uses
+ScannerScreen ..> BarcodeService : uses
+ScannerScreen ..> ProductsAPI : calls
+
+ProductsScreen ..> ProductCard : renders
+CartScreen ..> CartItem : renders
+
+AuthAPI ..> APIClient : uses
+ProductsAPI ..> APIClient : uses
+InvoicesAPI ..> APIClient : uses
+PayPalAPI ..> APIClient : uses
+
+@enduml

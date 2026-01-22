@@ -1,0 +1,40 @@
+@startuml Activity Login
+
+start
+
+:User opens app;
+
+if (Is authenticated?) then (yes)
+  :Navigate to Home;
+  stop
+else (no)
+  :Display Login Screen;
+  :User enters email and password;
+  :User clicks Login button;
+  
+  repeat
+    :Validate form fields;
+    
+    if (Fields valid?) then (no)
+      :Show validation error;
+      :User corrects input;
+    else (yes)
+      :Send POST /users/login;
+      
+      if (Request successful?) then (no)
+        :Show error message;
+        :User retries or cancels;
+      else (yes)
+        :Receive token and user data;
+        :Store token in localStorage/AsyncStorage;
+        :Update Redux user state;
+        :Navigate to Home Screen;
+        stop
+      endif
+    endif
+  repeat while (Retry?) is (yes)
+  
+  stop
+endif
+
+@enduml

@@ -1,0 +1,213 @@
+@startuml Frontend Classes
+
+' Redux Store
+class RootState {
+  - cart: CartState
+  - user: UserState
+  - products: ProductsState
+  + getState(): RootState
+  + dispatch(action: Action): void
+}
+
+class CartState {
+  - items: CartItem[]
+  + addItem(product: Product, quantity: number): void
+  + removeItem(productId: string): void
+  + updateQuantity(productId: string, quantity: number): void
+  + clearCart(): void
+  + getTotal(): number
+}
+
+class CartItem {
+  - productId: string
+  - name: string
+  - price: number
+  - quantity: number
+  - image_url: string
+  + getSubtotal(): number
+}
+
+class UserState {
+  - user: User | null
+  + setUser(user: User): void
+  + logout(): void
+  + isAuthenticated(): boolean
+  + isAdmin(): boolean
+}
+
+class ProductsState {
+  - products: Product[]
+  - currentPage: number
+  - totalPages: number
+  - loading: boolean
+  - error: string | null
+  + fetchProductsPage(page: number, category?: string): Promise<void>
+}
+
+' Components
+class Navbar {
+  - cartCount: number
+  - user: User | null
+  + render(): JSX.Element
+  + handleLogout(): void
+}
+
+class ProductCard {
+  + product: Product
+  + onAddToCart: (product: Product) => void
+  + render(): JSX.Element
+  + handleAddToCart(): void
+}
+
+class ProductList {
+  - products: Product[]
+  - loading: boolean
+  - page: number
+  - category: string | null
+  + render(): JSX.Element
+  + goToPage(page: number): void
+  + handleCategoryChange(category: string): void
+}
+
+class UserTable {
+  - users: User[]
+  - searchTerm: string
+  + render(): JSX.Element
+  + handleSearch(term: string): void
+  + handleDelete(userId: string): void
+}
+
+class KPIDashboard {
+  - kpiData: KPIData
+  - loading: boolean
+  + render(): JSX.Element
+  + fetchKPIs(): Promise<void>
+}
+
+' Pages
+class HomePage {
+  - trendingProducts: Product[]
+  + render(): JSX.Element
+}
+
+class ProductsPage {
+  - category: string | null
+  + render(): JSX.Element
+}
+
+class ProfilePage {
+  - user: User
+  - invoices: Invoice[]
+  - editing: boolean
+  + render(): JSX.Element
+  + handleSave(): Promise<void>
+}
+
+class PanierPage {
+  - cartItems: CartItem[]
+  + render(): JSX.Element
+  + handleCheckout(): void
+}
+
+class AdminPage {
+  - users: User[]
+  + render(): JSX.Element
+}
+
+class AdminUserDetailPage {
+  - user: User
+  - invoices: Invoice[]
+  - editing: boolean
+  + render(): JSX.Element
+  + handleRefund(invoiceId: string): Promise<void>
+}
+
+class LoginPage {
+  - email: string
+  - password: string
+  - error: string
+  + render(): JSX.Element
+  + handleLogin(): Promise<void>
+}
+
+class RegisterPage {
+  - formData: RegisterData
+  - error: string
+  + render(): JSX.Element
+  + handleRegister(): Promise<void>
+}
+
+' API Clients
+class APIClient {
+  - baseURL: string
+  - token: string | null
+  + setToken(token: string): void
+  + get(url: string): Promise<any>
+  + post(url: string, data: any): Promise<any>
+  + put(url: string, data: any): Promise<any>
+  + delete(url: string): Promise<any>
+}
+
+class AuthAPI {
+  + login(email: string, password: string): Promise<LoginResponse>
+  + register(userData: RegisterData): Promise<void>
+  + logout(): void
+  + getCurrentUser(): User | null
+  + isAuthenticated(): boolean
+}
+
+class ProductsAPI {
+  + getAll(page: number, limit: number, category?: string): Promise<ProductsResponse>
+  + getById(id: string): Promise<Product>
+  + create(product: Product): Promise<Product>
+  + update(id: string, product: Product): Promise<void>
+  + delete(id: string): Promise<void>
+}
+
+class UsersAPI {
+  + getAll(): Promise<User[]>
+  + getById(id: string): Promise<User>
+  + adminEdit(id: string, userData: User): Promise<void>
+  + adminDelete(id: string): Promise<void>
+}
+
+class InvoicesAPI {
+  + getAll(): Promise<Invoice[]>
+  + getByUserId(userId: string): Promise<Invoice[]>
+  + delete(id: string): Promise<void>
+  + refund(id: string, items?: RefundItem[]): Promise<void>
+}
+
+class ReportsAPI {
+  + getLatest(): Promise<Report>
+  + getTrendingProducts(): Promise<TrendingProduct[]>
+}
+
+class PayPalAPI {
+  + createOrder(items: CartItem[]): Promise<string>
+  + captureOrder(orderId: string): Promise<void>
+}
+
+' Relations
+RootState "1" *-- "1" CartState
+RootState "1" *-- "1" UserState
+RootState "1" *-- "1" ProductsState
+CartState "1" *-- "0..*" CartItem
+
+HomePage ..> ProductCard : uses
+ProductsPage ..> ProductList : uses
+AdminPage ..> UserTable : uses
+AdminPage ..> KPIDashboard : uses
+
+Navbar ..> RootState : reads
+ProductCard ..> RootState : dispatches
+ProductList ..> RootState : reads
+
+AuthAPI ..> APIClient : uses
+ProductsAPI ..> APIClient : uses
+UsersAPI ..> APIClient : uses
+InvoicesAPI ..> APIClient : uses
+ReportsAPI ..> APIClient : uses
+PayPalAPI ..> APIClient : uses
+
+@enduml

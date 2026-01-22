@@ -1,0 +1,169 @@
+@startuml Backend Classes
+
+' Models
+class User {
+  - _id: ObjectId
+  - email: string
+  - password: string
+  - firstName: string
+  - lastName: string
+  - phone: string
+  - billing: BillingInfo
+  - isAdmin: boolean
+  - createdAt: Date
+  + hashPassword(password: string): string
+  + comparePassword(password: string): boolean
+  + generateToken(): string
+}
+
+class BillingInfo {
+  - address: string
+  - zipCode: string
+  - city: string
+  - country: string
+}
+
+class Product {
+  - _id: string
+  - code: string
+  - product_name: string
+  - brands: string
+  - price: number
+  - image_url: string
+  - image_front_url: string
+  - categories: string
+  - categories_tags: string[]
+  - nutriscore_grade: string
+  - quantity: string
+  - stock: number
+  - nutrition_data_per: string
+  - energy_100g: number
+  - fat_100g: number
+  - saturated_fat_100g: number
+  - carbohydrates_100g: number
+  - sugars_100g: number
+  - proteins_100g: number
+  - salt_100g: number
+  + updateFromOpenFoodFacts(data: any): void
+  + isInStock(): boolean
+}
+
+class Invoice {
+  - _id: ObjectId
+  - userId: ObjectId
+  - paypalOrderId: string
+  - items: InvoiceItem[]
+  - total: number
+  - status: string
+  - deliveryStatus: string
+  - shipping: ShippingInfo
+  - createdAt: Date
+  - updatedAt: Date
+  + calculateTotal(): number
+  + refund(items?: RefundItem[]): Promise<void>
+}
+
+class InvoiceItem {
+  - productId: string
+  - name: string
+  - quantity: number
+  - price: number
+  - refunded: boolean
+  - refundedQuantity: number
+  + getSubtotal(): number
+}
+
+class ShippingInfo {
+  - name: FullName
+  - address: Address
+}
+
+class FullName {
+  - full_name: string
+}
+
+class Address {
+  - address_line_1: string
+  - admin_area_2: string
+  - postal_code: string
+  - country_code: string
+}
+
+class RefundItem {
+  - index: number
+  - quantity: number
+}
+
+class Report {
+  - avgPurchaseValue: number
+  - salesByPeriod: SalesPeriod
+  - trendingProducts: TrendingProduct[]
+  + generate(): Promise<Report>
+}
+
+class SalesPeriod {
+  - last24Hours: PeriodStats
+  - last7Days: PeriodStats
+}
+
+class PeriodStats {
+  - revenue: number
+  - orders: number
+}
+
+class TrendingProduct {
+  - productId: string
+  - product: Product
+  - recentQuantity: number
+  - recentRevenue: number
+}
+
+' Controllers
+class UserController {
+  + register(req, res): Promise<void>
+  + login(req, res): Promise<void>
+  + getById(req, res): Promise<void>
+  + adminEdit(req, res): Promise<void>
+  + adminDelete(req, res): Promise<void>
+}
+
+class ProductController {
+  + getAll(req, res): Promise<void>
+  + getById(req, res): Promise<void>
+  + create(req, res): Promise<void>
+  + update(req, res): Promise<void>
+  + delete(req, res): Promise<void>
+}
+
+class InvoiceController {
+  + getAll(req, res): Promise<void>
+  + getByUserId(req, res): Promise<void>
+  + create(req, res): Promise<void>
+  + update(req, res): Promise<void>
+  + delete(req, res): Promise<void>
+  + refund(req, res): Promise<void>
+}
+
+class ReportController {
+  + getLatest(req, res): Promise<void>
+  + getTrendingProducts(req, res): Promise<void>
+}
+
+class PayPalController {
+  + createOrder(req, res): Promise<void>
+  + captureOrder(req, res): Promise<void>
+}
+
+' Relations
+User "1" -- "0..*" Invoice : places
+User "1" *-- "1" BillingInfo : has
+Invoice "1" *-- "1..*" InvoiceItem : contains
+Invoice "1" *-- "1" ShippingInfo : has
+InvoiceItem "1" -- "1" Product : references
+ShippingInfo "1" *-- "1" FullName : has
+ShippingInfo "1" *-- "1" Address : has
+Report "1" *-- "1" SalesPeriod : contains
+Report "1" *-- "0..*" TrendingProduct : contains
+TrendingProduct "1" -- "1" Product : references
+
+@enduml

@@ -1,0 +1,840 @@
+openapi: 3.0.3
+info:
+  title: E-Shop API
+  description: |
+    API REST pour l'application e-commerce Trinity
+    
+    ## Authentification
+    La plupart des endpoints nécessitent un token JWT dans le header:
+    ```
+    Authorization: Bearer {token}
+    ```
+    
+    ## Flux principaux
+    1. **Authentification**: Login → Récupération token → Requêtes authentifiées
+    2. **Achat**: Ajout panier → Checkout → Paiement PayPal → Création facture
+    3. **Remboursement**: Admin sélectionne facture → Remboursement PayPal → Mise à jour stock
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+    email: support@trinity-eshop.com
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: http://localhost:4000
+    description: Development server
+  - url: https://api.trinity-eshop.com
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: Gestion de l'authentification (login, register)
+  - name: Users
+    description: Gestion des utilisateurs
+  - name: Products
+    description: Gestion des produits
+  - name: Invoices
+    description: Gestion des factures
+  - name: PayPal
+    description: Intégration PayPal pour paiements
+  - name: Reports
+    description: Statistiques et rapports (admin)
+
+security:
+  - BearerAuth: []
+
+paths:
+  /users/login:
+    post:
+      tags:
+        - Authentication
+      summary: Connexion utilisateur
+      description: Authentifie l'utilisateur et retourne un token JWT
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: user@example.com
+                password:
+                  type: string
+                  format: password
+                  example: MyP@ssw0rd
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+                  user:
+                    $ref: '#/components/schemas/User'
+        '401':
+          description: Identifiants invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/register:
+    post:
+      tags:
+        - Authentication
+      summary: Inscription utilisateur
+      description: Crée un nouveau compte utilisateur
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - email
+                - password
+                - firstName
+                - lastName
+              properties:
+                email:
+                  type: string
+                  format: email
+                password:
+                  type: string
+                  format: password
+                  minLength: 8
+                firstName:
+                  type: string
+                lastName:
+                  type: string
+                phone:
+                  type: string
+                billing:
+                  $ref: '#/components/schemas/BillingInfo'
+      responses:
+        '201':
+          description: Compte créé avec succès
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  user:
+                    $ref: '#/components/schemas/User'
+        '400':
+          description: Données invalides ou email déjà utilisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users:
+    get:
+      tags:
+        - Users
+      summary: Liste tous les utilisateurs (Admin)
+      description: Récupère la liste de tous les utilisateurs (réservé admin)
+      responses:
+        '200':
+          description: Liste des utilisateurs
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '403':
+          description: Accès non autorisé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /users/{id}:
+    get:
+      tags:
+        - Users
+      summary: Récupérer un utilisateur
+      description: Récupère les informations d'un utilisateur par son ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de l'utilisateur
+      responses:
+        '200':
+          description: Utilisateur trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: Utilisateur non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    put:
+      tags:
+        - Users
+      summary: Modifier un utilisateur (Admin)
+      description: Modifie les informations d'un utilisateur (réservé admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserUpdate'
+      responses:
+        '200':
+          description: Utilisateur modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Utilisateur non trouvé
+
+    delete:
+      tags:
+        - Users
+      summary: Supprimer un utilisateur (Admin)
+      description: Supprime un utilisateur (réservé admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Utilisateur supprimé
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Utilisateur non trouvé
+
+  /products:
+    get:
+      tags:
+        - Products
+      summary: Liste des produits
+      description: Récupère la liste paginée des produits avec filtres optionnels
+      security: []
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+          description: Numéro de page
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            default: 20
+            maximum: 100
+          description: Nombre de produits par page
+        - name: category
+          in: query
+          schema:
+            type: string
+          description: Filtrer par catégorie
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Recherche par nom
+      responses:
+        '200':
+          description: Liste des produits
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  products:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Product'
+                  totalPages:
+                    type: integer
+                  currentPage:
+                    type: integer
+                  totalProducts:
+                    type: integer
+
+  /products/detail/{barcode}:
+    get:
+      tags:
+        - Products
+      summary: Détails d'un produit
+      description: Récupère les détails d'un produit par code-barres
+      security: []
+      parameters:
+        - name: barcode
+          in: path
+          required: true
+          schema:
+            type: string
+          description: Code-barres du produit
+      responses:
+        '200':
+          description: Produit trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          description: Produit non trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /products/{id}:
+    put:
+      tags:
+        - Products
+      summary: Modifier un produit (Admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductUpdate'
+      responses:
+        '200':
+          description: Produit modifié
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Produit non trouvé
+
+    delete:
+      tags:
+        - Products
+      summary: Supprimer un produit (Admin)
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Produit supprimé
+        '403':
+          description: Accès non autorisé
+        '404':
+          description: Produit non trouvé
+
+  /invoices/user/{userId}:
+    get:
+      tags:
+        - Invoices
+      summary: Factures d'un utilisateur
+      description: Récupère toutes les factures d'un utilisateur
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Liste des factures
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Invoice'
+        '404':
+          description: Utilisateur non trouvé
+
+  /invoices/{id}/refund:
+    post:
+      tags:
+        - Invoices
+      summary: Rembourser une facture (Admin)
+      description: |
+        Rembourse totalement ou partiellement une facture
+        - Remboursement total: ne pas envoyer de `items`
+        - Remboursement partiel: envoyer `items` avec index et quantités
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: ID de la facture
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                items:
+                  type: array
+                  description: Articles à rembourser (optionnel pour remboursement partiel)
+                  items:
+                    type: object
+                    required:
+                      - index
+                      - quantity
+                    properties:
+                      index:
+                        type: integer
+                        description: Index de l'article dans la facture
+                      quantity:
+                        type: integer
+                        description: Quantité à rembourser
+            examples:
+              full_refund:
+                summary: Remboursement total
+                value: {}
+              partial_refund:
+                summary: Remboursement partiel
+                value:
+                  items:
+                    - index: 0
+                      quantity: 2
+                    - index: 1
+                      quantity: 1
+      responses:
+        '200':
+          description: Remboursement effectué
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                  invoice:
+                    $ref: '#/components/schemas/Invoice'
+        '400':
+          description: |
+            Erreur de validation:
+            - Facture non remboursable (déjà livrée)
+            - Articles déjà remboursés
+            - Quantité invalide
+        '404':
+          description: Facture non trouvée
+        '500':
+          description: Erreur PayPal
+
+  /paypal/create-order:
+    post:
+      tags:
+        - PayPal
+      summary: Créer un ordre PayPal
+      description: |
+        Crée un ordre de paiement PayPal pour le checkout
+        
+        **Flow:**
+        1. Client envoie panier + infos facturation
+        2. Backend valide stock disponible
+        3. Backend crée ordre PayPal
+        4. Client reçoit orderId pour ouvrir modal PayPal
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - items
+                - billing
+              properties:
+                items:
+                  type: array
+                  items:
+                    type: object
+                    required:
+                      - productId
+                      - quantity
+                    properties:
+                      productId:
+                        type: string
+                      quantity:
+                        type: integer
+                        minimum: 1
+                billing:
+                  $ref: '#/components/schemas/ShippingInfo'
+      responses:
+        '200':
+          description: Ordre créé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  orderId:
+                    type: string
+                    example: 5O190127TN364715T
+        '400':
+          description: Stock insuffisant ou données invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /paypal/capture-order:
+    post:
+      tags:
+        - PayPal
+      summary: Capturer un paiement PayPal
+      description: |
+        Capture le paiement après validation PayPal par l'utilisateur
+        
+        **Flow:**
+        1. Utilisateur approuve paiement sur PayPal
+        2. Client envoie orderId pour capture
+        3. Backend capture paiement
+        4. Backend crée facture en DB
+        5. Backend met à jour stock produits
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required:
+                - orderId
+              properties:
+                orderId:
+                  type: string
+                  example: 5O190127TN364715T
+      responses:
+        '200':
+          description: Paiement capturé
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  invoice:
+                    $ref: '#/components/schemas/Invoice'
+        '400':
+          description: Ordre invalide ou déjà capturé
+        '500':
+          description: Erreur PayPal
+
+  /reports/latest:
+    get:
+      tags:
+        - Reports
+      summary: Derniers rapports (Admin)
+      description: |
+        Récupère les statistiques et KPIs pour le dashboard admin
+        - Valeur moyenne des achats
+        - Ventes des dernières 24h et 7 jours
+        - Produits tendances
+      responses:
+        '200':
+          description: Rapports récupérés
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Report'
+        '403':
+          description: Accès non autorisé
+
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: |
+        Token JWT obtenu via /users/login
+        
+        Format: `Authorization: Bearer {token}`
+
+  schemas:
+    User:
+      type: object
+      properties:
+        _id:
+          type: string
+          example: 507f1f77bcf86cd799439011
+        email:
+          type: string
+          format: email
+          example: user@example.com
+        firstName:
+          type: string
+          example: John
+        lastName:
+          type: string
+          example: Doe
+        phone:
+          type: string
+          example: "+33612345678"
+        isAdmin:
+          type: boolean
+          example: false
+        billing:
+          $ref: '#/components/schemas/BillingInfo'
+        createdAt:
+          type: string
+          format: date-time
+
+    UserUpdate:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        phone:
+          type: string
+        billing:
+          $ref: '#/components/schemas/BillingInfo'
+
+    BillingInfo:
+      type: object
+      properties:
+        address:
+          type: string
+          example: 123 Main Street
+        zipCode:
+          type: string
+          example: "75001"
+        city:
+          type: string
+          example: Paris
+        country:
+          type: string
+          example: France
+
+    Product:
+      type: object
+      properties:
+        _id:
+          type: string
+          description: Code-barres du produit
+          example: "3017620422003"
+        code:
+          type: string
+        product_name:
+          type: string
+          example: Nutella
+        brands:
+          type: string
+          example: Ferrero
+        price:
+          type: number
+          format: float
+          example: 4.99
+        image_url:
+          type: string
+          format: uri
+        image_front_url:
+          type: string
+          format: uri
+        categories:
+          type: string
+        categories_tags:
+          type: array
+          items:
+            type: string
+        nutriscore_grade:
+          type: string
+          enum: [a, b, c, d, e]
+        quantity:
+          type: string
+        stock:
+          type: integer
+          example: 150
+        nutrition_data_per:
+          type: string
+        energy_100g:
+          type: number
+        fat_100g:
+          type: number
+        saturated_fat_100g:
+          type: number
+        carbohydrates_100g:
+          type: number
+        sugars_100g:
+          type: number
+        proteins_100g:
+          type: number
+        salt_100g:
+          type: number
+
+    ProductUpdate:
+      type: object
+      properties:
+        price:
+          type: number
+          format: float
+        stock:
+          type: integer
+
+    Invoice:
+      type: object
+      properties:
+        _id:
+          type: string
+        userId:
+          type: string
+        paypalOrderId:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/InvoiceItem'
+        total:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [pending, paid, cancelled, refunded, partiellement remboursee, remboursee]
+        deliveryStatus:
+          type: string
+          enum: [en preparation, expediee, livree]
+        shipping:
+          $ref: '#/components/schemas/ShippingInfo'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    InvoiceItem:
+      type: object
+      properties:
+        productId:
+          type: string
+        name:
+          type: string
+        quantity:
+          type: integer
+        price:
+          type: number
+          format: float
+        refunded:
+          type: boolean
+        refundedQuantity:
+          type: integer
+
+    ShippingInfo:
+      type: object
+      properties:
+        name:
+          type: object
+          properties:
+            full_name:
+              type: string
+        address:
+          type: object
+          properties:
+            address_line_1:
+              type: string
+            admin_area_2:
+              type: string
+              description: City
+            postal_code:
+              type: string
+            country_code:
+              type: string
+
+    Report:
+      type: object
+      properties:
+        avgPurchaseValue:
+          type: number
+          format: float
+          example: 45.67
+        salesByPeriod:
+          type: object
+          properties:
+            last24Hours:
+              $ref: '#/components/schemas/PeriodStats'
+            last7Days:
+              $ref: '#/components/schemas/PeriodStats'
+        trendingProducts:
+          type: array
+          items:
+            $ref: '#/components/schemas/TrendingProduct'
+
+    PeriodStats:
+      type: object
+      properties:
+        revenue:
+          type: number
+          format: float
+          example: 1234.56
+        orders:
+          type: integer
+          example: 27
+
+    TrendingProduct:
+      type: object
+      properties:
+        productId:
+          type: string
+        product:
+          $ref: '#/components/schemas/Product'
+        recentQuantity:
+          type: integer
+        recentRevenue:
+          type: number
+          format: float
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          example: Invalid credentials
+        message:
+          type: string
+          example: Email ou mot de passe incorrect
+        code:
+          type: string
+          example: AUTH_ERROR

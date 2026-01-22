@@ -1,0 +1,89 @@
+@startuml Activity Scan and Purchase
+
+start
+
+:User clicks Scanner button;
+
+if (Camera permission granted?) then (no)
+  :Request camera permission;
+  
+  if (Permission granted?) then (no)
+    :Show error message;
+    stop
+  else (yes)
+    :Continue;
+  endif
+else (yes)
+endif
+
+:Open camera scanner;
+:Display camera viewfinder;
+
+repeat
+  :User scans product barcode;
+  :Decode barcode data;
+  :Send GET /products/detail/{barcode};
+  
+  if (Product found?) then (no)
+    :Show "Product not found" error;
+    :User scans another or cancels;
+  else (yes)
+    :Display product details;
+    :Show name, price, image, stock;
+    :User adjusts quantity;
+    
+    if (Stock available?) then (no)
+      :Show out of stock message;
+      stop
+    else (yes)
+      :User clicks Add to Cart;
+      :Dispatch addItem action;
+      :Update cart state in Redux;
+      :Show success notification;
+      
+      if (User wants to checkout?) then (no)
+        :Return to home;
+        stop
+      else (yes)
+        :Navigate to Cart;
+        :Display cart items;
+        :Calculate total;
+        :User clicks Checkout;
+        
+        repeat
+          :User enters billing info;
+          
+          if (Billing info valid?) then (no)
+            :Show validation errors;
+          else (yes)
+            :Initialize PayPal payment;
+            :POST /paypal/create-order;
+            :Receive PayPal order ID;
+            :Open PayPal modal;
+            :User approves payment;
+            :POST /paypal/capture-order;
+            
+            if (Payment successful?) then (no)
+              :Show payment error;
+              :User retries or cancels;
+              stop
+            else (yes)
+              :Create invoice in DB;
+              :Update product stock;
+              :Clear cart;
+              :Show success message;
+              :Navigate to purchase history;
+              stop
+            endif
+          endif
+        repeat while (Retry billing info?) is (yes)
+        
+        stop
+      endif
+    endif
+  endif
+repeat while (Scan another?) is (yes)
+
+stop
+
+@enduml

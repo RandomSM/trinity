@@ -1,0 +1,66 @@
+@startuml Activity Admin Refund
+
+start
+
+:Admin navigates to Users list;
+:GET /users retrieves all users;
+:Display users table;
+:Admin clicks on user;
+:Navigate to user detail page;
+:GET /users/{id};
+:GET /invoices/user/{userId};
+:Display user info and invoices;
+:Admin expands invoice;
+:Display invoice items;
+
+if (Delivery status = "en preparation"?) then (no)
+  :Show "Cannot refund" message;
+  stop
+else (yes)
+  :Show refund options;
+  
+  if (Admin wants partial refund?) then (yes)
+    :Admin selects items to refund;
+    :Admin adjusts refund quantities;
+    :Admin clicks Refund Selected;
+  else (no)
+    :Admin clicks Refund All;
+  endif
+  
+  :Confirm refund dialog;
+  
+  if (Admin confirms?) then (no)
+    :Cancel refund;
+    stop
+  else (yes)
+    :POST /invoices/{id}/refund;
+    
+    if (Partial or full refund?) then (partial)
+      :Send refund items array;
+      :Backend processes partial refund;
+      :Update invoice status: "partiellement remboursee";
+      :Update items refunded quantities;
+    else (full)
+      :Send no items (full refund);
+      :Backend processes full refund;
+      :Update invoice status: "remboursee";
+      :Mark all items as refunded;
+    endif
+    
+    :Restore product stock;
+    
+    if (PayPal refund successful?) then (no)
+      :Show PayPal error;
+      :Rollback database changes;
+      :Show error message;
+      stop
+    else (yes)
+      :Update invoice in database;
+      :Refresh invoice list;
+      :Show success notification;
+      stop
+    endif
+  endif
+endif
+
+@enduml

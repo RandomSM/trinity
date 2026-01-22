@@ -3,8 +3,6 @@ services:
     image: mongo:6
     container_name: trinity_mongo_prod
     restart: always
-    env_file:
-      - ./backend/.env.production
     environment:
       MONGO_INITDB_ROOT_USERNAME: root
       MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
@@ -34,8 +32,6 @@ services:
       dockerfile: Dockerfile
       target: production
     restart: always
-    env_file:
-      - ./backend/.env.production
     environment:
       NODE_ENV: production
       MONGODB_URI: mongodb://root:${MONGO_PASSWORD}@mongo:27017/eshop?authSource=admin
@@ -81,8 +77,6 @@ services:
       dockerfile: Dockerfile
       target: production
     restart: always
-    env_file:
-      - ./trinity/.env.production
     environment:
       NODE_ENV: production
       NEXT_PUBLIC_API_URL: ${API_URL:-http://localhost:4000}
