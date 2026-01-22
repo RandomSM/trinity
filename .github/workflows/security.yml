@@ -50,41 +50,6 @@ jobs:
         uses: actions/dependency-review-action@v4
         with:
           fail-on-severity: high
-  
-  # Dependency Check for pushes
-  dependency-check:
-    name: Dependency Check
-    runs-on: ubuntu-latest
-    if: github.event_name == 'push'
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: '20'
-      
-      - name: Check Backend Dependencies
-        working-directory: ./backend
-        run: |
-          npm ci --legacy-peer-deps
-          npx npm-check-updates
-        continue-on-error: true
-      
-      - name: Check Frontend Dependencies
-        working-directory: ./trinity
-        run: |
-          npm ci --legacy-peer-deps
-          npx npm-check-updates
-        continue-on-error: true
-      
-      - name: Check Mobile Dependencies
-        working-directory: ./trinity-mobile
-        run: |
-          npm ci --legacy-peer-deps
-          npx npm-check-updates
-        continue-on-error: true
 
   # Secret Detection with Gitleaks
   secret-scan:

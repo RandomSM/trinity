@@ -24,13 +24,11 @@ apiClient.interceptors.request.use(
   }
 );
 
-// Auth API calls
 export const authAPI = {
   login: async (email: string, password: string) => {
     const response = await apiClient.post('/users/login', { email, password });
     const { token, user } = response.data;
     
-    // Store token
     await AsyncStorage.setItem('token', token);
     await AsyncStorage.setItem('user', JSON.stringify(user));
     
@@ -58,7 +56,6 @@ export const authAPI = {
   },
 };
 
-// Products API
 export const productsAPI = {
   getAll: async (page: number = 1, limit: number = 20, category?: string) => {
     const params: any = { page, limit, includeTotal: page === 1 };
@@ -73,7 +70,6 @@ export const productsAPI = {
   },
 };
 
-// Invoices API
 export const invoicesAPI = {
   getByUserId: async (userId: string) => {
     const response = await apiClient.get(`/invoices/user/${userId}`);
@@ -81,7 +77,6 @@ export const invoicesAPI = {
   },
 };
 
-// PayPal API
 export const paypalAPI = {
   createOrder: async (orderData: any) => {
     const response = await apiClient.post('/paypal/create-order', orderData);

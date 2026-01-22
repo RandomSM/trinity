@@ -116,7 +116,6 @@ describe('Invoices API', () => {
 describe('PayPal API', () => {
   describe('POST /paypal/create-order', () => {
     it.skip('should require valid order data', async function() {
-      // Skip: Requires PayPal API connection
       this.timeout(5000);
       const response = await request(app)
         .post('/paypal/create-order')
@@ -126,7 +125,6 @@ describe('PayPal API', () => {
     });
 
     it.skip('should validate order amount', async function() {
-      // Skip: Requires PayPal API connection
       this.timeout(5000);
       const response = await request(app)
         .post('/paypal/create-order')

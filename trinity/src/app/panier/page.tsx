@@ -151,7 +151,6 @@ export default function CartPage() {
                       if (result.capture && result.invoice) {
                         const shipping = result.capture.purchase_units?.[0]?.shipping;
                         dispatch(clearCart());
-                        // Redirection après succès
                         alert(`Paiement réussi ! Commande enregistrée. Livraison : ${shipping?.address?.address_line_1}, ${shipping?.address?.admin_area_2}`);
                         router.push('/profile'); // Redirige vers le profil où l'utilisateur voit ses commandes
                       } else {

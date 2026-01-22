@@ -16,11 +16,9 @@ export default function Navbar() {
   const dispatch = useDispatch();
 
   const handleLogout = () => {
-    // Dispatch Redux logout actions
     dispatch(logout());
     dispatch(clearCart());
     
-    // Use the API client to logout (clears localStorage and redirects)
     authAPI.logout();
   };
 

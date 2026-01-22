@@ -30,14 +30,12 @@ export default function AdminUsersPage() {
   useEffect(() => {
     const checkAuth = async () => {
       if (!user) {
-        // Check if user is authenticated
         if (!authAPI.isAuthenticated()) {
           router.push("/login");
           return;
         }
 
         try {
-          // Get current user from backend
           const userData = await authAPI.getCurrentUser();
           dispatch(setUser({
             email: userData.email,

@@ -26,7 +26,6 @@ export default function CartScreen({ navigation }: any) {
     const handleDeepLink = (event: { url: string }) => {
       console.log('Deep link recu:', event.url);
       
-      // Fermer le navigateur PayPal immédiatement
       WebBrowser.dismissBrowser();
       console.log('Navigateur ferme');
       
@@ -60,7 +59,6 @@ export default function CartScreen({ navigation }: any) {
       if (appState.current.match(/inactive|background/) && nextAppState === 'active') {
         console.log('App revenue au premier plan');
         
-        // Forcer la fermeture du navigateur au retour de l'app
         WebBrowser.dismissBrowser();
         
         if (paymentPending && orderIdRef.current) {
@@ -149,11 +147,9 @@ export default function CartScreen({ navigation }: any) {
     try {
       console.log('Creation de la commande PayPal...');
       
-      // Générer l'URL de retour compatible avec le mode tunnel Expo
       const successUrl = Linking.createURL('paypal/success');
       const cancelUrl = Linking.createURL('paypal/cancel');
       
-      // Enlever le /--/ d'Expo si présent pour avoir une URL propre
       const cleanSuccessUrl = successUrl.replace('/--/', '/');
       const cleanCancelUrl = cancelUrl.replace('/--/', '/');
       
@@ -196,10 +192,8 @@ export default function CartScreen({ navigation }: any) {
       
       console.log('Resultat WebBrowser:', result);
       
-      // Le navigateur s'est fermé (utilisateur l'a fermé ou deep link reçu)
       if (result.type === 'cancel' || result.type === 'dismiss') {
         console.log('Navigateur ferme par l\'utilisateur');
-        // Ne rien faire, on attend le deep link ou l'utilisateur a annulé
       }
       
       setLoading(false);

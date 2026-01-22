@@ -6,7 +6,6 @@ import logger from "../lib/logger";
 
 const invoiceRoutes = Router();
 
-// User can create invoice for themselves, admin for anyone
 invoiceRoutes.post("/:id", authenticateToken, requireOwnerOrAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
@@ -44,7 +43,6 @@ invoiceRoutes.post("/:id", authenticateToken, requireOwnerOrAdmin, async (req: A
   }
 });
 
-// Admin only - Get all invoices
 invoiceRoutes.get("/", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const db = await connectDB();
@@ -56,7 +54,6 @@ invoiceRoutes.get("/", authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-// User can view their own invoices, admin can view anyone's
 invoiceRoutes.get("/user/:id", authenticateToken, requireOwnerOrAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
@@ -67,7 +64,6 @@ invoiceRoutes.get("/user/:id", authenticateToken, requireOwnerOrAdmin, async (re
     
     const db = await connectDB();
 
-    // Recherche avec userId en string ET en ObjectId
     const invoices = await db
       .collection("invoices")
       .find({ 
@@ -85,7 +81,6 @@ invoiceRoutes.get("/user/:id", authenticateToken, requireOwnerOrAdmin, async (re
   }
 });
 
-// Authenticated users can view specific invoice
 invoiceRoutes.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
@@ -104,7 +99,6 @@ invoiceRoutes.get("/:id", authenticateToken, async (req: AuthRequest, res) => {
   }
 });
 
-// Admin only - Update invoice delivery status
 invoiceRoutes.put("/:id", authenticateToken, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
@@ -151,29 +145,25 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
       });
     }
 
-    // Vérifie qu'il y a un captureId PayPal
+
     if (!invoice.paypalCaptureId) {
       return res.status(400).json({ error: "Aucun ID de capture PayPal trouvé" });
     }
 
-    // Fetch product prices from database - SAME AS paypal.ts
     const productIds = invoice.items.map((item: any) => String(item.productId));
     const products = await db.collection("products").find({
       _id: { $in: productIds }
     }).toArray();
 
-    // Create a map of productId -> price - SAME AS paypal.ts
     const priceMap = new Map();
     products.forEach((product: any) => {
       priceMap.set(String(product._id), product.price || 0);
     });
 
-    // Calculate refund amount
     let refundAmount = 0;
     let isFullRefund = false;
 
     if (itemsToRefund && Array.isArray(itemsToRefund) && itemsToRefund.length > 0) {
-      // Partial refund
       itemsToRefund.forEach((refundItem: { index: number, quantity: number }) => {
         const item = invoice.items[refundItem.index];
         if (item) {
@@ -184,13 +174,11 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
         }
       });
       
-      // Check if it's a full refund (all items with full quantities)
       isFullRefund = invoice.items.every((item: any, idx: number) => {
         const refundItem = itemsToRefund.find((r: any) => r.index === idx);
         return refundItem && refundItem.quantity === item.quantity;
       }) && itemsToRefund.length === invoice.items.length;
     } else {
-      // Full refund
       invoice.items.forEach((item: any) => {
         const productId = String(item.productId);
         const price = priceMap.get(productId) || 0;
@@ -205,7 +193,6 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
       return res.status(400).json({ error: "Montant du remboursement invalide" });
     }
 
-    // Effectue le remboursement via PayPal
     const paypalAuth = Buffer.from(
       `${process.env.PAYPAL_CLIENT_ID}:${process.env.PAYPAL_CLIENT_SECRET}`
     ).toString("base64");
@@ -238,7 +225,6 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
     logger.info(`Check the BUYER's PayPal Sandbox account to see the refund`);
     logger.info(`Full refund response:`, JSON.stringify(refundData, null, 2));
 
-    // Update invoice based on full or partial refund
     const updateData: any = {
       refundId: refundData.id,
       refundedAt: new Date(),
@@ -252,7 +238,6 @@ invoiceRoutes.post("/:id/refund", authenticateToken, async (req: AuthRequest, re
       updateData.status = "partiellement remboursée";
       updateData.refundedItems = itemsToRefund;
       
-      // Update item quantities in the invoice
       const updatedItems = invoice.items.map((item: any, idx: number) => {
         const refundItem = itemsToRefund.find((r: any) => r.index === idx);
         if (refundItem) {

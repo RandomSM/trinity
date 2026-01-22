@@ -44,14 +44,12 @@ export default function ProfilePage() {
   useEffect(() => {
     const loadUserData = async () => {
       if (!user) {
-        // Check if user is authenticated
         if (!authAPI.isAuthenticated()) {
           router.push("/login");
           return;
         }
 
         try {
-          // Get current user from backend
           const userData = await authAPI.getCurrentUser();
           dispatch(setUser({ 
             email: userData.email, 
@@ -81,7 +79,6 @@ export default function ProfilePage() {
           password: "",
         });
 
-        // Load user's purchase history
         loadOrders();
       }
     };
@@ -134,7 +131,6 @@ export default function ProfilePage() {
       setEditing(false);
       setSuccess("Profil mis à jour avec succès !");
       
-      // Clear success message after 3 seconds
       setTimeout(() => setSuccess(""), 3000);
     } catch (err: any) {
       console.error("Error updating profile:", err);

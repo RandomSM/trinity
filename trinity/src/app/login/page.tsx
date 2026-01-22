@@ -16,7 +16,6 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    // Check if redirected due to token expiration
     if (searchParams.get('expired') === 'true') {
       setError("Votre session a expiré. Veuillez vous reconnecter.");
     }
@@ -30,7 +29,6 @@ export default function LoginPage() {
     try {
       const data = await authAPI.login(email, password);
       
-      // Update Redux store with user data
       dispatch(setUser({ 
         email: data.user.email, 
         id: data.user._id, 
@@ -41,7 +39,6 @@ export default function LoginPage() {
         isAdmin: data.user.isAdmin 
       }));
       
-      // Redirect to homepage or admin if admin user
       if (data.user.isAdmin) {
         router.push("/admin");
       } else {

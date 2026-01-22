@@ -11,16 +11,13 @@ export interface AuthRequest extends Request {
   };
 }
 
-/**
- * Middleware to authenticate JWT token from Authorization header
- */
 export const authenticateToken = (
   req: AuthRequest,
   res: Response,
   next: NextFunction
 ) => {
   const authHeader = req.headers.authorization;
-  const token = authHeader?.split(" ")[1]; // Bearer TOKEN
+  const token = authHeader?.split(" ")[1];
 
   if (!token) {
     return res.status(401).json({ error: "Token d'authentification requis" });

@@ -18,7 +18,6 @@ export default function ProductsPage() {
   const totalPages = Math.ceil(total / limit);
 
   useEffect(() => {
-    // Charge les produits à chaque changement de catégorie
     dispatch(fetchProductsPage({ page: 1, category }));
   }, [dispatch, category]);
 
@@ -26,7 +25,6 @@ export default function ProductsPage() {
     if (target < 1 || target > totalPages) return;
     console.log("goToPage ->", target);
     dispatch(fetchProductsPage({ page: target, category }));
-    // optional: scroll top to show user the grid
     if (typeof globalThis.window !== "undefined") {
       globalThis.window.scrollTo({ top: 0, behavior: "smooth" });
     }
@@ -35,7 +33,7 @@ export default function ProductsPage() {
   return (
     <div className="bg-base-200 min-h-screen">
       <div className="container mx-auto py-8">
-        {loading && products.length === 0 && ( // ✅ Show only if nothing loaded yet
+        {loading && products.length === 0 && (
           <div className="flex justify-center items-center h-64">
             <span className="loading loading-spinner loading-lg"></span>
           </div>

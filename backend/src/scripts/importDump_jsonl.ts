@@ -1,12 +1,56 @@
 import fs from "fs";
+import https from "https";
+import { createGunzip } from "zlib";
+import { pipeline } from "stream";
+import { promisify } from "util";
 import readline from "readline";
 import { connectDB } from "../lib/mongodb";
 
-/**
- * Script pour importer des produits depuis un fichier JSONL (une ligne = un produit)
- * Vérifie la disponibilité des images avant l'import
- * Exécuter avec: npx ts-node src/scripts/importDump_jsonl.ts
- */
+const pipelineAsync = promisify(pipeline);
+
+async function downloadAndExtractDump(url: string, destination: string): Promise<void> {
+  return new Promise((resolve, reject) => {
+    console.log(`Téléchargement depuis: ${url}`);
+    
+    https.get(url, (response) => {
+      if (response.statusCode === 302 || response.statusCode === 301) {
+        if (response.headers.location) {
+          downloadAndExtractDump(response.headers.location, destination).then(resolve).catch(reject);
+          return;
+        }
+      }
+      
+      if (response.statusCode !== 200) {
+        reject(new Error(`Échec du téléchargement: ${response.statusCode}`));
+        return;
+      }
+
+      const totalSize = parseInt(response.headers['content-length'] || '0', 10);
+      let downloaded = 0;
+
+      response.on('data', (chunk) => {
+        downloaded += chunk.length;
+        if (totalSize > 0) {
+          const percent = ((downloaded / totalSize) * 100).toFixed(2);
+          process.stdout.write(`\rTéléchargement: ${percent}% (${(downloaded / 1024 / 1024).toFixed(2)} MB)`);
+        }
+      });
+
+      const gunzip = createGunzip();
+      const output = fs.createWriteStream(destination);
+
+      response.pipe(gunzip).pipe(output);
+
+      output.on('finish', () => {
+        console.log('\n✓ Téléchargement et décompression terminés');
+        resolve();
+      });
+
+      output.on('error', reject);
+      gunzip.on('error', reject);
+    }).on('error', reject);
+  });
+}
 
 function getOpenFoodFactsImageUrl(barcode: string) {
   if (!barcode || barcode.length < 13) return "";
@@ -43,17 +87,24 @@ async function importDump() {
     const db = await connectDB("eshop");
     const collection = db.collection("products");
 
-    // Chemin vers le fichier JSONL
-    const filePath = "\\\\TRUENAS\\Video_telephone\\openfoodfacts-products.jsonl";
+    const existingCount = await collection.countDocuments();
+    if (existingCount > 0) {
+      console.log(`Base de données déjà remplie (${existingCount} produits). Import annulé.`);
+      process.exit(0);
+    }
+
+    const dumpUrl = "https://static.openfoodfacts.org/data/openfoodfacts-products.jsonl.gz";
+    const filePath = "./openfoodfacts-products.jsonl";
     
     if (!fs.existsSync(filePath)) {
-      console.error(`Fichier introuvable: ${filePath}`);
-      process.exit(1);
+      console.log("📥 Téléchargement du dump OpenFoodFacts (JSONL)...");
+      await downloadAndExtractDump(dumpUrl, filePath);
+    } else {
+      console.log("✓ Fichier dump déjà présent, utilisation du cache");
     }
 
     console.log(`Lecture du fichier JSONL: ${filePath}`);
 
-    // Créer un stream pour lire ligne par ligne
     const fileStream = fs.createReadStream(filePath, { encoding: "utf-8" });
     const rl = readline.createInterface({
       input: fileStream,
@@ -75,7 +126,6 @@ async function importDump() {
       try {
         const product = JSON.parse(line);
         
-        // Filtre les produits invalides (tous ces champs sont obligatoires)
         if (!product.code && !product._id) {
           skipped++;
           continue;
@@ -101,7 +151,6 @@ async function importDump() {
           continue;
         }
 
-        // Formate le produit (sans générer de prix/stock aléatoires)
         const formatted = {
           _id: product.code || product._id,
           code: product.code || product._id,
@@ -122,9 +171,7 @@ async function importDump() {
 
         batch.push(formatted);
 
-        // Importer par lots après vérification des images
         if (batch.length >= batchSize) {
-          // Vérifie les images par lots de 50 en parallèle
           const validProducts: any[] = [];
           
           for (let i = 0; i < batch.length; i += imageCheckBatchSize) {
@@ -147,14 +194,12 @@ async function importDump() {
             }
           }
           
-          // Importe uniquement les produits avec images valides
           if (validProducts.length > 0) {
             try {
               await collection.insertMany(validProducts, { ordered: false });
               imported += validProducts.length;
               console.log(`Progression: ${imported} produits importés (${skipped} ignorés, ligne ${lineCount})`);
             } catch (err: any) {
-              // Ignore les erreurs de doublons
               if (err.code !== 11000) {
                 console.error("Erreur lors de l'insertion:", err.message);
               }
@@ -165,11 +210,9 @@ async function importDump() {
         }
       } catch (err) {
         skipped++;
-        // Ignore les lignes JSON invalides
       }
     }
 
-    // Importer le dernier lot
     if (batch.length > 0) {
       const validProducts: any[] = [];
       

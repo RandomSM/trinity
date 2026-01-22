@@ -143,7 +143,6 @@ export default function AdminUserDetailPage() {
         setLoading(true);
         console.log(`Chargement des données pour l'utilisateur: ${userId}`);
         
-        // Fetch user details and invoices in parallel
         const [userData, userInvoices] = await Promise.all([
           usersAPI.getById(userId),
           invoicesAPI.getByUserId(userId)
@@ -248,7 +247,6 @@ export default function AdminUserDetailPage() {
     const newSelected = new Map(selectedItems);
     const itemMap = newSelected.get(invoiceId) || new Map<number, number>();
     
-    // Clamp quantity between 1 and maxQuantity
     const clampedQty = Math.max(1, Math.min(quantity, maxQuantity));
     itemMap.set(itemIndex, clampedQty);
     newSelected.set(invoiceId, itemMap);
@@ -297,9 +295,7 @@ export default function AdminUserDetailPage() {
     const selected = selectedItems.get(invoiceId);
     const itemsToRefund: Array<{index: number, quantity: number}> = [];
 
-    // Prepare items to refund
     if (selected && selected.size > 0 && invoice) {
-      // Partial refund with quantities
       selected.forEach((qty, idx) => {
         const item = invoice.items[idx];
         if (item) {
@@ -317,14 +313,11 @@ export default function AdminUserDetailPage() {
     try {
       const response = await invoicesAPI.refund(invoiceId, itemsToRefund.length > 0 ? itemsToRefund : undefined);
 
-      // Reload invoices from server to get updated data
       const updatedInvoices = await invoicesAPI.getByUserId(userId);
       setInvoices(updatedInvoices);
       
-      // Clear selection
       deselectAllItems(invoiceId);
       
-      // Show success message with actual refund amount from backend
       const refundAmountMsg = response.refundAmount ? ` (${response.refundAmount}€)` : '';
       alert(`${response.message || "Remboursement effectué avec succès !"}${refundAmountMsg}`);
     } catch (err) {

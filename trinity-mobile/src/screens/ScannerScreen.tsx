@@ -24,10 +24,8 @@ export default function ScannerScreen({ navigation }: any) {
     setScanned(true);
     
     try {
-      // Fetch product from API using barcode
       const product = await productsAPI.getById(data);
       
-      // Navigate to product detail
       setIsProcessing(false);
       navigation.navigate('ProductDetail', { product });
     } catch (error: any) {

@@ -19,9 +19,8 @@ interface ProductCarouselProps {
 
 export default function ProductCarousel({ products }: ProductCarouselProps) {
   const [currentIndex, setCurrentIndex] = useState(0);
-  const itemsPerPage = 4; // Nombre de produits visibles en même temps
+  const itemsPerPage = 4;
 
-  // Auto-scroll toutes les 5 secondes
   useEffect(() => {
     const interval = setInterval(() => {
       handleNext();

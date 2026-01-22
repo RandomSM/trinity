@@ -4,7 +4,6 @@ import { configureStore } from '@reduxjs/toolkit';
 import ProductCard from '@/components/ProductCard';
 import cartReducer from '@/app/shop/cartSlice';
 
-// Create a test store
 const createTestStore = () => configureStore({
   reducer: {
     cart: cartReducer

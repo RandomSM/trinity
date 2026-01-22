@@ -1,10 +1,5 @@
 import { connectDB } from "../lib/mongodb";
 
-/**
- * Script pour ajouter un stock aléatoire aux produits
- * Génère une quantité en stock entre 0 et 100
- * Exécuter avec: npx ts-node src/scripts/addStock.ts
- */
 async function addStock() {
   try {
     const db = await connectDB("eshop");
@@ -12,7 +7,6 @@ async function addStock() {
 
     console.log("Récupération des produits...");
 
-    // Récupère tous les produits
     const products = await collection.find({}).toArray();
 
     console.log(`${products.length} produits trouvés`);
@@ -24,7 +18,6 @@ async function addStock() {
 
     let updated = 0;
 
-    // Traitement par lots de 1000 pour optimiser
     const batchSize = 1000;
     
     for (let i = 0; i < products.length; i += batchSize) {

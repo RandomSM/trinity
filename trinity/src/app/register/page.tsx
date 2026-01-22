@@ -28,7 +28,6 @@ export default function RegisterPage() {
         phone: phone || undefined
       });
 
-      // Redirect to login page after successful registration
       router.push("/login?registered=true");
     } catch (error: any) {
       console.error("Registration error:", error);

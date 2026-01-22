@@ -92,7 +92,8 @@ services:
       - "3000:3000"
     depends_on:
       backend:
-        condition: service_healthy
+        condition: service_started
+        restart: true
     networks:
       - trinity-network
     healthcheck:

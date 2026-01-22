@@ -36,13 +36,11 @@ const initialState: ProductsState = {
   hasMore: true,
 };
 
-// Async thunk to fetch products for a page
 export const fetchProductsPage = createAsyncThunk(
   "products/fetchPage",
   async ({ page, category }: { page: number; category?: string }) => {
     const data = await productsAPI.getAll(page, PRODUCTS_PER_PAGE, category);
 
-    // Ensure data.products exists and is an array
     const productsArray = Array.isArray(data.products) ? data.products : [];
 
     const products: Product[] = productsArray.map((p: any) => ({

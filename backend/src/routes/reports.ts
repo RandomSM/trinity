@@ -5,7 +5,6 @@ import logger from "../lib/logger";
 
 const routeReport = Router();
 
-// GET / - Get latest KPIs (must be first!)
 routeReport.get("/", async (req, res) => {
   logger.info("GET /reports appele");
   try {
@@ -14,7 +13,6 @@ routeReport.get("/", async (req, res) => {
 
     logger.info("Recherche du dernier KPI...");
 
-    // Get the most recent KPI snapshot
     const latestKpi = await kpisCollection
       .find()
       .sort({ timestamp: -1 })
@@ -22,7 +20,6 @@ routeReport.get("/", async (req, res) => {
       .toArray();
 
     if (latestKpi.length === 0) {
-      // Retourne des valeurs par défaut avec la structure complète
       return res.json({
         timestamp: new Date(),
         avgPurchaseValue: 0,
@@ -59,8 +56,6 @@ routeReport.get("/", async (req, res) => {
   }
 });
 
-// Update KPIs (should be called periodically or after purchases)
-// Fixed: productId as strings not ObjectId - FORCED RELOAD
 const updateKpisHandler = async (req: any, res: any) => {
   try {
     logger.info("UPDATE KPIs START V2");
@@ -71,14 +66,12 @@ const updateKpisHandler = async (req: any, res: any) => {
     const usersCollection = db.collection("users");
     const kpisCollection = eshopDb.collection("kpis");
 
-    // Calculate time ranges
     const now = new Date();
     const last24Hours = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     const last7Days = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     const last30Days = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
 
     logger.info("Calculating KPI 1: Average Purchase Value");
-    // KPI 1: Average Purchase Value (Last 30 Days)
     const avgPurchaseResult = await invoicesCollection.aggregate([
       { 
         $match: { 
@@ -100,7 +93,6 @@ const updateKpisHandler = async (req: any, res: any) => {
     logger.info("KPI 1 done:", avgPurchase, totalPurchases30Days);
 
     logger.info("Calculating KPI 2: Top Products");
-    // KPI 2: Top 10 Most Bought Products (All Time)
     const topProductsResult = await invoicesCollection.aggregate([
       { $match: { status: { $ne: "remboursée" } } },
       { $unwind: "$items" },
@@ -117,11 +109,9 @@ const updateKpisHandler = async (req: any, res: any) => {
 
     logger.info("Top products aggregation result:", JSON.stringify(topProductsResult.slice(0, 2)));
 
-    // Enrich with product details
     const topProducts = await Promise.all(
       topProductsResult.map(async (item: any) => {
         logger.info("Processing product ID:", item._id, "type:", typeof item._id);
-        // Les productId sont des strings (codes-barres), pas des ObjectId
         const product = await productsCollection.findOne({ _id: item._id } as any);
         return {
           productId: item._id,
@@ -134,7 +124,6 @@ const updateKpisHandler = async (req: any, res: any) => {
       })
     );
 
-    // KPI 3: Total Sales by Period
     const salesLast24h = await invoicesCollection.aggregate([
       { 
         $match: { 
@@ -180,26 +169,21 @@ const updateKpisHandler = async (req: any, res: any) => {
       }
     };
 
-    // KPI 4: Customer Count and Activity
     const totalCustomers = await usersCollection.countDocuments();
     const activeCustomers = await invoicesCollection.distinct("userId", {
       createdAt: { $gte: last30Days }
     });
 
-    // Additional KPIs
     logger.info("Calculating additional KPIs");
     
-    // Total Revenue (All Time)
     const totalRevenueResult = await invoicesCollection.aggregate([
       { $match: { status: { $ne: "remboursée" } } },
       { $group: { _id: null, total: { $sum: "$total" } } }
     ]).toArray();
     const totalRevenue = totalRevenueResult[0]?.total || 0;
 
-    // Total Orders (All Time)
     const totalOrders = await invoicesCollection.countDocuments({ status: { $ne: "remboursée" } });
 
-    // Average Items Per Order
     const avgItemsResult = await invoicesCollection.aggregate([
       { $match: { status: { $ne: "remboursée" } } },
       { $unwind: "$items" },
@@ -208,12 +192,10 @@ const updateKpisHandler = async (req: any, res: any) => {
     ]).toArray();
     const avgItemsPerOrder = avgItemsResult[0]?.avgItems || 0;
 
-    // Order Status Distribution
     const statusDistribution = await invoicesCollection.aggregate([
       { $group: { _id: "$status", count: { $sum: 1 } } }
     ]).toArray();
 
-    // Revenue Growth Rate (compare last 7 days vs previous 7 days)
     const previous7Days = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
     const revenueLastWeek = salesLast7Days[0]?.total || 0;
     const revenuePreviousWeek = await invoicesCollection.aggregate([
@@ -230,7 +212,6 @@ const updateKpisHandler = async (req: any, res: any) => {
       ? parseFloat((((revenueLastWeek - prevWeekTotal) / prevWeekTotal) * 100).toFixed(2))
       : 0;
 
-    // Best Selling Categories
     const categoryStats = await invoicesCollection.aggregate([
       { $match: { status: { $ne: "remboursée" } } },
       { $unwind: "$items" },
@@ -255,7 +236,6 @@ const updateKpisHandler = async (req: any, res: any) => {
 
     logger.info("Additional KPIs calculated");
 
-    // KPI 5: Revenue Trends (Daily for last 7 days)
     const revenueTrends = await invoicesCollection.aggregate([
       { 
         $match: { 
@@ -281,7 +261,6 @@ const updateKpisHandler = async (req: any, res: any) => {
       orders: day.orders
     }));
 
-    // Bonus: Trending Products (High sales in last 7 days)
     const trendingProducts = await invoicesCollection.aggregate([
       { 
         $match: { 
@@ -303,7 +282,6 @@ const updateKpisHandler = async (req: any, res: any) => {
 
     const trendingProductsEnriched = await Promise.all(
       trendingProducts.map(async (item: any) => {
-        // Les productId sont des strings (codes-barres), pas des ObjectId
         const product = await productsCollection.findOne({ _id: item._id } as any);
         return {
           productId: item._id,
@@ -324,7 +302,6 @@ const updateKpisHandler = async (req: any, res: any) => {
       })
     );
 
-    // Store KPIs in database
     const kpiDocument = {
       timestamp: now,
       avgPurchaseValue: parseFloat(avgPurchase.toFixed(2)),
@@ -340,7 +317,6 @@ const updateKpisHandler = async (req: any, res: any) => {
       },
       revenueTrends: formattedTrends,
       trendingProducts: trendingProductsEnriched.filter((p: any) => p.product !== null),
-      // Additional KPIs
       totalRevenue: parseFloat(totalRevenue.toFixed(2)),
       totalOrders,
       avgItemsPerOrder: parseFloat(avgItemsPerOrder.toFixed(2)),
@@ -355,7 +331,6 @@ const updateKpisHandler = async (req: any, res: any) => {
 
     await kpisCollection.insertOne(kpiDocument);
 
-    // Keep only last 30 KPI snapshots
     const kpiCount = await kpisCollection.countDocuments();
     if (kpiCount > 30) {
       const oldestKpis = await kpisCollection
@@ -385,7 +360,6 @@ const updateKpisHandler = async (req: any, res: any) => {
 routeReport.post("/update-kpis", updateKpisHandler);
 routeReport.get("/update-kpis", updateKpisHandler);
 
-// Get trending products for homepage
 routeReport.get("/trending-products", async (req, res) => {
   try {
     const eshopDb = await connectDB("eshop");

@@ -1,4 +1,3 @@
-// Mock AsyncStorage
 jest.mock('@react-native-async-storage/async-storage', () => ({
   setItem: jest.fn(),
   getItem: jest.fn(),
@@ -6,13 +5,11 @@ jest.mock('@react-native-async-storage/async-storage', () => ({
   clear: jest.fn(),
 }));
 
-// Mock expo-web-browser
 jest.mock('expo-web-browser', () => ({
   openBrowserAsync: jest.fn(),
   dismissBrowser: jest.fn(),
 }));
 
-// Mock expo-camera
 jest.mock('expo-camera', () => ({
   Camera: jest.fn(({ children }) => children),
   CameraView: jest.fn(({ children }) => children),
@@ -22,7 +19,6 @@ jest.mock('expo-camera', () => ({
   ]),
 }));
 
-// Mock expo-linking
 jest.mock('expo-linking', () => ({
   createURL: jest.fn((path) => `exp://127.0.0.1:8081/${path}`),
   addEventListener: jest.fn(() => ({
@@ -34,7 +30,6 @@ jest.mock('expo-linking', () => ({
   useURL: jest.fn(() => null),
 }));
 
-// Mock react-native Linking
 jest.mock('react-native/Libraries/Linking/Linking', () => ({
   createURL: jest.fn((path) => `exp://127.0.0.1:8081/${path}`),
   addEventListener: jest.fn(() => ({
@@ -46,7 +41,6 @@ jest.mock('react-native/Libraries/Linking/Linking', () => ({
   getInitialURL: jest.fn(() => Promise.resolve(null)),
 }));
 
-// Mock @expo/vector-icons
 jest.mock('@expo/vector-icons', () => ({
   Ionicons: 'Ionicons',
 }));

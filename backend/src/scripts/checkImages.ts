@@ -48,7 +48,6 @@ async function checkImages() {
     let deleted = 0;
 
     while (checked < total) {
-      // Récupère un lot de produits
       const products = await collection
         .find({})
         .skip(checked)
@@ -57,7 +56,6 @@ async function checkImages() {
 
       if (products.length === 0) break;
 
-      // Vérifie les images en parallèle (par lot de 10 pour ne pas surcharger)
       for (let i = 0; i < products.length; i += 10) {
         const batch = products.slice(i, i + 10);
         

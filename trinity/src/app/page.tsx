@@ -39,7 +39,6 @@ export default function HomePage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        // Fetch trending products and KPIs
         const trending = await reportsAPI.getTrendingProducts();
         
         setTrendingProducts(trending.slice(0, 12));

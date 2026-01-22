@@ -73,7 +73,6 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const checkAuthAndLoad = async () => {
-      // Check if user is authenticated and is admin
       if (!authAPI.isAuthenticated()) {
         router.push("/login");
         return;
@@ -103,7 +102,6 @@ export default function DashboardPage() {
       setKpiData(data);
     } catch (error: any) {
       if (error.response?.status === 404) {
-        // No KPI data available yet
         setKpiData(null);
       } else {
         console.error("Error fetching KPI data:", error);
@@ -169,7 +167,6 @@ export default function DashboardPage() {
     );
   }
 
-  // Prepare chart data
   const revenueTrendData = {
     labels: kpiData.revenueTrends.map((d) => new Date(d.date).toLocaleDateString("fr-FR")),
     datasets: [

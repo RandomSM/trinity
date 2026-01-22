@@ -7,7 +7,6 @@ async function cleanProducts() {
 
     console.log("Vérification des produits avec nutriscore invalide...");
 
-    // Compte d'abord les produits à supprimer
     const count = await collection.countDocuments({
       $and: [
         { nutriscore_grade: { $exists: true } },
@@ -24,7 +23,6 @@ async function cleanProducts() {
       process.exit(0);
     }
 
-    // Supprime les produits avec nutriscore invalide
     const result = await collection.deleteMany({
       $and: [
         { nutriscore_grade: { $exists: true } },
@@ -36,7 +34,6 @@ async function cleanProducts() {
 
     console.log(`Supprimé ${result.deletedCount} produits avec nutriscore invalide`);
     
-    // Compte final
     const remaining = await collection.countDocuments();
     console.log(`Produits restants : ${remaining}`);
   } catch (err) {

@@ -64,7 +64,6 @@ async function fetchPriceForProduct(barcode: string): Promise<number | null> {
   try {
     console.log(`    Code utilisé: ${barcode}`);
     
-    // Interroger directement l'API prices avec le code produit (toutes devises)
     const url = `https://prices.openfoodfacts.org/api/v1/prices?product_code=${barcode}`;
     console.log(`    URL: ${url}`);
     

@@ -6,7 +6,6 @@ import { Provider } from 'react-redux';
 import { store } from './src/store/store';
 import { Ionicons } from '@expo/vector-icons';
 
-// Screens (we'll create these next)
 import LoginScreen from './src/screens/LoginScreen';
 import HomeScreen from './src/screens/HomeScreen';
 import ScannerScreen from './src/screens/ScannerScreen';

@@ -19,8 +19,6 @@ routerPaypal.post("/create-order", async (req, res) => {
     return res.status(400).json({ error: "Total invalide ou manquant" });
   }
 
-  // Utiliser les URLs fournies par l'app ou les URLs par défaut
-  // On ajoute les deep link URLs en query params pour pouvoir les récupérer côté backend
   const backendBaseUrl = "https://presystolic-uninterruptedly-wren.ngrok-free.dev/api/paypal";
   const finalReturnUrl = returnUrl 
     ? `${backendBaseUrl}/success?returnUrl=${encodeURIComponent(returnUrl)}`
@@ -76,19 +74,16 @@ routerPaypal.post("/capture-order", async (req, res) => {
 
     const db = await connectDB("eshop");
 
-    // Fetch product details from database to get accurate prices
     const productIds = items.map((item: any) => String(item.productId));
     const products = await db.collection("products").find({
       _id: { $in: productIds }
     }).toArray();
 
-    // Create a map of productId -> price
     const priceMap = new Map();
     products.forEach((product: any) => {
       priceMap.set(String(product._id), product.price || 0);
     });
 
-    // Calculate items with prices from database
     const invoiceItems = items.map((item: any) => {
       const productId = String(item.productId);
       const price = priceMap.get(productId) || 0;
@@ -100,7 +95,6 @@ routerPaypal.post("/capture-order", async (req, res) => {
       };
     });
 
-    // Calculate total from fetched prices
     const total = invoiceItems.reduce((sum: number, item: any) => 
       sum + (item.price * item.quantity), 0
     );
@@ -118,7 +112,6 @@ routerPaypal.post("/capture-order", async (req, res) => {
 
     const result = await db.collection("invoices").insertOne(newInvoice);
 
-    // Réduire le stock des produits commandés
     const stockUpdatePromises = invoiceItems.map((item: any) => {
       return db.collection("products").updateOne(
         { _id: item.productId },
@@ -145,7 +138,6 @@ routerPaypal.post("/capture-order", async (req, res) => {
 routerPaypal.get("/success", (req, res) => {
   logger.info("PayPal success redirect hit");
   
-  // Récupérer l'URL de retour depuis les query params si fournie
   const returnUrl = req.query.returnUrl as string || 'trinitymobile://paypal/success';
   logger.info("Return URL:", returnUrl);
   
@@ -216,10 +208,8 @@ routerPaypal.get("/success", (req, res) => {
         </a>
       </div>
       <script>
-        // Redirection immédiate
         window.location.href = '${returnUrl}';
         
-        // Tentative de fermeture après un court délai
         setTimeout(function() {
           window.close();
         }, 100);
@@ -232,7 +222,6 @@ routerPaypal.get("/success", (req, res) => {
 routerPaypal.get("/cancel", (req, res) => {
   logger.warn("PayPal cancel redirect hit");
   
-  // Récupérer l'URL de retour depuis les query params si fournie
   const cancelUrl = req.query.cancelUrl as string || 'trinitymobile://paypal/cancel';
   logger.info("Cancel URL:", cancelUrl);
   
@@ -278,10 +267,8 @@ routerPaypal.get("/cancel", (req, res) => {
         <p>Redirection vers l'application...</p>
       </div>
       <script>
-        // Redirection immédiate
         window.location.href = '${cancelUrl}';
         
-        // Tentative de fermeture après un court délai
         setTimeout(function() {
           window.close();
         }, 100);

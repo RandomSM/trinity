@@ -9,7 +9,6 @@ import logger from "../lib/logger";
 const usersRoutes = Router();
 const SECRET = process.env.JWT_SECRET!;
 
-// Admin only - Get all users
 usersRoutes.get("/", authenticateToken, requireAdmin, async (req, res) => {
   try {
     const db = await connectDB();
@@ -33,7 +32,6 @@ usersRoutes.get("/", authenticateToken, requireAdmin, async (req, res) => {
   }
 });
 
-// Public - User login
 usersRoutes.post("/login", async (req, res) => {
   const { email, password } = req.body;
   logger.info('Login request received:', { email, passwordLength: password?.length });
@@ -110,7 +108,6 @@ usersRoutes.post("/register", async (req, res) => {
   }
 });
 
-// User can edit their own profile, admin can edit any
 usersRoutes.put("/edit", authenticateToken, requireOwnerOrAdmin, async (req: AuthRequest, res) => {
   try {
     const { id, email, firstName, lastName, phone, billing, password } = req.body;
@@ -143,7 +140,6 @@ usersRoutes.put("/edit", authenticateToken, requireOwnerOrAdmin, async (req: Aut
   }
 });
 
-// User can delete their own account, admin can delete any
 usersRoutes.delete("/delete", authenticateToken, requireOwnerOrAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.body;
@@ -165,7 +161,6 @@ usersRoutes.delete("/delete", authenticateToken, requireOwnerOrAdmin, async (req
   }
 });
 
-// Admin only - Edit any user
 usersRoutes.put("/admin-edit/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const { id } = req.params;
@@ -194,7 +189,6 @@ usersRoutes.put("/admin-edit/:id", authenticateToken, requireAdmin, async (req: 
   }
 });
 
-// User can view their own profile, admin can view any
 usersRoutes.get("/:id", authenticateToken, requireOwnerOrAdmin, async (req: AuthRequest, res) => {
   try {
     logger.info(`GET /users/:id - Recherche utilisateur avec ID: ${req.params.id}`);
@@ -202,7 +196,6 @@ usersRoutes.get("/:id", authenticateToken, requireOwnerOrAdmin, async (req: Auth
     
     const { id } = req.params;
     
-    // Vérifie si l'ID est un ObjectId valide
     if (!id || !ObjectId.isValid(id)) {
       logger.warn(`ID invalide: ${id}`);
       return res.status(400).json({ error: "ID invalide" });
@@ -213,7 +206,6 @@ usersRoutes.get("/:id", authenticateToken, requireOwnerOrAdmin, async (req: Auth
     if (!user) {
       logger.warn(`Utilisateur non trouve pour l'ID: ${id}`);
       
-      // Vérifie combien d'utilisateurs existent
       const count = await db.collection("users").countDocuments();
       logger.info(`Nombre total d'utilisateurs dans la base: ${count}`);
       
@@ -238,7 +230,6 @@ usersRoutes.get("/:id", authenticateToken, requireOwnerOrAdmin, async (req: Auth
   }
 });
 
-// Admin only - Delete any user
 usersRoutes.delete("/:id", authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const db = await connectDB();
