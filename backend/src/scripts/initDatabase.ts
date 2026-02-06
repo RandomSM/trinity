@@ -13,12 +13,12 @@ async function runScript(scriptName: string): Promise<void> {
       ? [scriptPath.replace('.ts', '.js')]
       : ['ts-node', scriptPath];
     
-    const process = spawn(command, args, {
+    const childProcess = spawn(command, args, {
       stdio: "inherit",
       shell: true,
     });
 
-    process.on("close", (code) => {
+    childProcess.on("close", (code) => {
       if (code === 0) {
         console.log(`✓ ${scriptName} terminé avec succès`);
         resolve();
