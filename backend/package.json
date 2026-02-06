@@ -2,6 +2,7 @@
   "name": "backend",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "description": "eshop back end",
   "main": "index.js",
   "scripts": {
