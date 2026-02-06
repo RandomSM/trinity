@@ -225,7 +225,7 @@ Pour deployer sur votre machine locale :
 
 Pour toute question ou probleme, consulter les logs :
 
-```powershell
+```
 docker-compose logs backend
 docker-compose logs frontend
 ```
