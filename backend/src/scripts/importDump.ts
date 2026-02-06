@@ -121,4 +121,6 @@ async function importDump() {
   }
 }
 
-await importDump();
+(async () => {
+  await importDump();
+})();

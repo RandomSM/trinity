@@ -43,4 +43,6 @@ async function cleanProducts() {
   }
 }
 
-await cleanProducts();
+(async () => {
+  await cleanProducts();
+})();
