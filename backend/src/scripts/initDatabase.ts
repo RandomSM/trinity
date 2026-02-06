@@ -6,7 +6,14 @@ async function runScript(scriptName: string): Promise<void> {
   return new Promise((resolve, reject) => {
     console.log(`\n=== Exécution de ${scriptName} ===`);
     const scriptPath = path.join(__dirname, scriptName);
-    const process = spawn("npx", ["ts-node", scriptPath], {
+    
+    const isProduction = process.env.NODE_ENV === 'production';
+    const command = isProduction ? 'node' : 'npx';
+    const args = isProduction 
+      ? [scriptPath.replace('.ts', '.js')]
+      : ['ts-node', scriptPath];
+    
+    const process = spawn(command, args, {
       stdio: "inherit",
       shell: true,
     });

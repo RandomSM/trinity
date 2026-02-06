@@ -15,7 +15,16 @@ async function startServer() {
     logger.info('MongoDB connected');
     
     logger.info('Vérification de l\'initialisation de la base de données...');
-    const initScript = spawn('npx', ['ts-node', path.join(__dirname, 'scripts/initDatabase.ts')], {
+    
+    const isProduction = process.env.NODE_ENV === 'production';
+    const scriptPath = isProduction 
+      ? path.join(__dirname, 'scripts', 'initDatabase.js')
+      : path.join(__dirname, 'scripts', 'initDatabase.ts');
+    
+    const command = isProduction ? 'node' : 'npx';
+    const args = isProduction ? [scriptPath] : ['ts-node', scriptPath];
+    
+    const initScript = spawn(command, args, {
       stdio: 'inherit',
       shell: true
     });
@@ -25,7 +34,12 @@ async function startServer() {
         logger.info('Base de données initialisée avec succès');
         
         logger.info('Démarrage du scheduler...');
-        spawn('npx', ['ts-node', path.join(__dirname, 'scripts/scheduler.ts')], {
+        const schedulerPath = isProduction
+          ? path.join(__dirname, 'scripts', 'scheduler.js')
+          : path.join(__dirname, 'scripts', 'scheduler.ts');
+        const schedulerArgs = isProduction ? [schedulerPath] : ['ts-node', schedulerPath];
+        
+        spawn(command, schedulerArgs, {
           detached: true,
           stdio: 'ignore',
           shell: true
